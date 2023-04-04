@@ -1,0 +1,38 @@
+{
+  "name": "localview",
+  "description": "Easily access a localhost website from your mobile device",
+  "private": false,
+  "version": "0.0.9",
+  "author": "Bjorn Krols (https://formspark.io)",
+  "license": "MIT",
+  "keywords": [
+    "cli",
+    "localhost",
+    "mobile"
+  ],
+  "homepage": "https://github.com/formspark/localview#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/formspark/localview.git"
+  },
+  "bugs": {
+    "url": "https://github.com/formspark/localview/issues"
+  },
+  "files": [
+    "bin"
+  ],
+  "bin": "bin/cli.js",
+  "scripts": {
+    "format": "prettier --write . --ignore-path .gitignore",
+    "prepare": "husky install"
+  },
+  "dependencies": {
+    "qrcode-terminal": "^0.12.0",
+    "yargs": "^17.3.0"
+  },
+  "devDependencies": {
+    "husky": "^7.0.4",
+    "prettier": "^2.5.1",
+    "pretty-quick": "^3.1.2"
+  }
+}
