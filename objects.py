@@ -4,12 +4,10 @@ from datetime import datetime
 
 from globals import *
 
-with open(DATABASE_PATH + "drinkers.json", "r") as infile:
-    drinkers = json.load(infile)
-
 
 @dataclass
 class Drinker:
+    username: str
     dob: int
     mode: int
     sex: str
@@ -32,6 +30,7 @@ class Drinker:
     def save_to_db(self):
         drive_time = self.drive_time.isoformat() if self.drive_time else None
         drinkers[self.dob] = {
+            "username": self.username,
             "mode": self.mode,
             "sex": self.sex,
             "weight": self.weight,
@@ -40,27 +39,8 @@ class Drinker:
             "drive_time": self.drive_time.isoformat() if self.drive_time else None,
         }
         try:
-            with open("drinkers.json", "w") as outfile:
+            with open("databases/users.json", "w") as outfile:
                 json.dump(drinkers, outfile)
         except Exception:
             print("Unable to load database file")
         return drinkers
-
-
-def get_drinker(dob: int) -> Drinker:
-    if dob not in drinkers:
-        return
-
-    d = drinkers[dob]
-    start_time = datetime.fromisoformat(d["start_time"])
-    drive_time = datetime.fromisoformat(d["drive_time"]) if d["drive_time"] else None
-    drinker = Drinker(
-        dob,
-        d["mode"],
-        d["sex"],
-        d["weight"],
-        start_time,
-        d["max_bac"],
-        drive_time,
-    )
-    return drinker

@@ -1,38 +1,66 @@
-from flask import Flask, render_template, request, app
+import datetime
 import json
+
+from flask import app
+from flask import Flask
+from flask import render_template
+from flask import request
+
+from objects import Drinker
+from pyscripts.crud import get_drinker
 
 app = Flask(__name__)
 
-@app.route('/')
-def index():
-    return render_template('create_account.html')
 
-@app.route('/register', methods=['POST'])
+@app.route("/")
+def index():
+    return render_template("create_account.html")
+
+
+@app.route("/register", methods=["POST"])
 def register():
     # Load existing user data
-    import os
 
-    if not os.path.exists('users.json'):
-        with open('users.json', 'w') as f:
-            f.write('[]')
-
-    with open('users.json', 'r') as f:
-        data = json.load(f)
-
-    username = request.form['username']
-    password = request.form['password']
-    dob = request.form['dob']
+    def _check_if_user_exists(username):
+        for user in data:
+            if user["username"] == username:
+                return True
+        return False
 
     # Check if username already exists
-    if any(user['username'] == username for user in data):
-        return 'Username already exists!'
+    if _check_if_user_exists(request.form["username"]):
+        return "Username already exists!"
 
-    # Add new user to data
-    data.append({'username': username, 'password': password, 'dob': dob})
-    with open('users.json', 'w') as f:
-        json.dump(data, f)
+    # Create Drinker object
+    username = request.form["username"]
+    password = request.form["password"]
+    dob = request.form["dob"]
+    mode = request.form["mode"]
+    sex = request.form["sex"]
+    weight = request.form["weight"]
+    start_time = datetime.now()
+    max_bac = request.form["max_bac"]
+    drive_time = request.form["drive_time"]
+    new_drinker = Drinker(
+        username=username,
+        password=password,
+        dob=dob,
+        mode=mode,
+        sex=sex,
+        weight=weight,
+        start_time=start_time,
+        max_bac=max_bac,
+        drive_time=drive_time,
+    )
+    new_drinker.save_to_db()
+    return f"Account created successfully! Username: {username}, Date of Birth: {dob}"
 
-    return f'Account created successfully! Username: {username}, Date of Birth: {dob}'
 
-if __name__ == '__main__':
+@app.route("/login", methods=["GET"])
+def login():
+    username = "user123"
+    get_drinker(username=username)
+
+
+if __name__ == "__main__":
     app.run()

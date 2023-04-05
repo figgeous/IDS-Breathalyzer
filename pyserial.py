@@ -1,3 +1,4 @@
+# Connection to Arduino and data collection
 import time
 
 import serial

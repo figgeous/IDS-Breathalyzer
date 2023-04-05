@@ -1,3 +1,10 @@
+from objects import Drinker
+
+
+def get_drink_recommendations(current_bac: float, drinker: Drinker):
+    return ["Gin and tonic"]
+
+
 def get_current_bac(
     weight: int, sex: str, drinks: int, seconds_since_start: int
 ) -> float:
@@ -33,13 +40,27 @@ def get_current_bac(
     return current_bac, seconds_to_sober
 
 
-# # Sample usage
-# weight = 84.1
-# sex = "Male"
-# drinks = 10 # number of drinks (30 ml pure alcohol)
-# seconds_since_start = 4*3600# Time (hr) since the person started drinking
-# current_bac, seconds_to_sober = get_current_bac(weight=weight,sex=sex,drinks=drinks,seconds_since_start=seconds_since_start)
+# Sample usage
+weight = 84.1
+sex = "Male"
+drinks = 10  # number of drinks (30 ml pure alcohol)
+seconds_since_start = 4 * 3600  # Time (hr) since the person started drinking
+current_bac, seconds_to_sober = get_current_bac(
+    weight=weight, sex=sex, drinks=drinks, seconds_since_start=seconds_since_start
+)
 
-# print("You're a " + str(sex) + ", And you've had " + str(drinks) + " drinks, over the last " + str(seconds_since_start/3600) + " hour(s).")
-# print("This means your current BAC should be: " + str(round(current_bac, 2)))
-# print("Because you're this drunk, you have to wait ", round(seconds_to_sober/3600, 2), " hours before you can drive again.")
+print(
+    "You're a "
+    + str(sex)
+    + ", And you've had "
+    + str(drinks)
+    + " drinks, over the last "
+    + str(seconds_since_start / 3600)
+    + " hour(s)."
+)
+print("This means your current BAC should be: " + str(round(current_bac, 2)))
+print(
+    "Because you're this drunk, you have to wait ",
+    round(seconds_to_sober / 3600, 2),
+    " hours before you can drive again.",
+)
