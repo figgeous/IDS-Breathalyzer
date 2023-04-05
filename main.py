@@ -6,8 +6,8 @@ from flask import Flask
 from flask import render_template
 from flask import request
 
-from objects import Drinker
 from pyscripts.crud import get_drinker
+from pyscripts.objects import Drinker
 
 app = Flask(__name__)
 

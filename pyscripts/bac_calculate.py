@@ -1,4 +1,4 @@
-from objects import Drinker
+from pyscripts.objects import Drinker
 
 
 def get_drink_recommendations(current_bac: float, drinker: Drinker):

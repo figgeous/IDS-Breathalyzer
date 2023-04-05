@@ -1,11 +1,11 @@
 import json
 
-from pyscripts.crud import get_drinker
-
-with open("/databases/users.json", "r") as infile:
-    drinkers = json.load(infile)
+from pyscripts.objects import Drinker
 
 
 username = "user123"
-get_drinker(username=username)
-# get_drinker(drinkers=data, username="user123")
+
+drinker = Drinker.get_drinker(username=username)
+drinker.sex = "female"
+print(drinker.sex)
+drinker.save_to_db()
