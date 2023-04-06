@@ -2,6 +2,15 @@ import json
 from datetime import datetime
 
 
+def get_drinkers():
+    try:
+        with open("databases/users.json", "r") as infile:
+            drinkers = json.load(infile)
+    except Exception:
+        print("Unable to load database file")
+    return drinkers
+
+
 class Drinker:
     username: str
     dob: int
@@ -25,7 +34,7 @@ class Drinker:
         self.drive_time = drive_time
 
     @staticmethod
-    def get_drinker(username: str) -> "Drinker":
+    def get_from_db(username: str) -> "Drinker":
         drinkers = get_drinkers()
         d = drinkers[username]
         start_time = datetime.fromisoformat(d["start_time"])
@@ -78,12 +87,3 @@ class Drinker:
 
     def __str__(self):
         return f"Drinker: {self.username} - {self.dob} - {self.mode} - {self.start_time} - {self.max_bac} - {self.drive_time}"
-
-
-def get_drinkers():
-    try:
-        with open("databases/users.json", "r") as infile:
-            drinkers = json.load(infile)
-    except Exception:
-        print("Unable to load database file")
-    return drinkers
