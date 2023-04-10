@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 
 
-def get_drinkers():
+def get_drinkers() -> dict:
     try:
         with open("databases/users.json", "r") as infile:
             drinkers = json.load(infile)
