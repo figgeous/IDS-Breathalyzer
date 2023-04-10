@@ -36,6 +36,10 @@ class Drinker:
     @staticmethod
     def get_from_db(username: str) -> "Drinker":
         drinkers = get_drinkers()
+
+        if username not in drinkers:
+            return None
+
         d = drinkers[username]
         start_time = datetime.fromisoformat(d["start_time"])
         drive_time = (

@@ -6,7 +6,6 @@ from flask import Flask
 from flask import render_template
 from flask import request
 
-from pyscripts.crud import get_drinker
 from pyscripts.objects import Drinker
 
 app = Flask(__name__)
@@ -19,20 +18,13 @@ def index():
 
 @app.route("/register", methods=["POST"])
 def register():
-    # Load existing user data
-
-    def _check_if_user_exists(username):
-        for user in data:
-            if user["username"] == username:
-                return True
-        return False
+    username = request.form["username"]
 
     # Check if username already exists
-    if _check_if_user_exists(request.form["username"]):
-        return "Username already exists!"
+    if Drinker.get_from_db(username=username):
+        return f"Username {username} already exists!"
 
     # Create Drinker object
-    username = request.form["username"]
     password = request.form["password"]
     dob = request.form["dob"]
     mode = request.form["mode"]
@@ -59,7 +51,7 @@ def register():
 @app.route("/login", methods=["GET"])
 def login():
     username = "user123"
-    get_drinker(username=username)
+    Drinker.get_from_db(username)
 
 
 if __name__ == "__main__":
