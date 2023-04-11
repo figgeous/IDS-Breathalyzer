@@ -4,7 +4,6 @@ from random import randint
 import eel
 import http.server
 import socketserver
-import os
 import qrcode
 
 
