@@ -53,13 +53,28 @@
         input[type="submit"]:hover {
             background-color: #0056b3;
         }
+        /* Additional style for category selection field */
+        select {
+            padding: 10px;
+            font-size: 18px;
+            border-radius: 5px;
+            border: none;
+            outline: none;
+            width: 100px;
+        }
     </style>
 </head>
 <body>
     <h1>Welcome, {{ username }}!</h1>
-    <form action="/process_input" method="POST">
-        <label for="input">Input:</label>
+    <form action="/update_account" method="POST">
+        <label for="input">Blood alcohol level:</label>
         <input type="text" name="input" id="input">
+        <label for="category">Choose your mode</label>
+        <select name="category" id="category">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+        </select>
         <input type="submit" value="Submit">
     </form>
 </body>
