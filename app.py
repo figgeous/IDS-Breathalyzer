@@ -4,6 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for
 import json
 import os
 
+from pyscripts.bac_calculate import get_drink_recommendations
 from pyscripts.objects import Drinker
 
 logging.basicConfig(filename="app.log",
@@ -67,6 +68,8 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def account_login():
     logging.info("Login page accessed")
+
+    # Check if the request method is POST
     if request.method == 'POST':
         logging.info("POST request received")
 
@@ -81,27 +84,40 @@ def account_login():
         drinker = Drinker.get_from_db(username=username)
         if drinker and drinker.password == password:
             logging.info("Valid username and password")
-            # return redirect(url_for('account_home', username=username))
-            return redirect(url_for('account_home'))
+            return redirect(url_for('account_home', username=username))
+            # return redirect(url_for('account_result', username=username))
+            # return redirect(url_for('account_home'))
         elif drinker and drinker.password != password:
             logging.info("Invalid username and/or password")
             return "Invalid password"
 
-    return render_template('account_login.html')
+    # Render the login page
+    return render_template('login_page.html')
 
 
 @app.route('/account/home')
 def account_home():
     # Get the username from the URL parameter
     username = request.args.get('username')
+    logging.info(f"Account page accessed for {username}")
+    # Render the account_home.html template with username as parameter
+    return render_template('account_home.html', username=username)
 
-    # Render the account.html template with username as parameter
-    return render_template('account.html', username=username)
-
-@app.route('/account/drinker')
+@app.route('/account/recommendation')
 def account_result():
 
-    return render_template('drinker.html')
+    return render_template('recommendation.html')
+
+@app.route('/recommendation', methods=['POST'])
+def recommendation():
+    logging.info("Recommendation page accessed for user " + request.form['username'])
+    drinker = Drinker.get_from_db(username=request.form['username'])
+    recommendations = get_drink_recommendations(
+        current_bac=float(request.form['current_bac']),
+        drinker=drinker,
+        )
+
+    return render_template('recommendation.html', context={"recommendations": recommendations})
 
 if __name__ == '__main__':
     app.run(debug=True)

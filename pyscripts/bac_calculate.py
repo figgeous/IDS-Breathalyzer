@@ -5,7 +5,7 @@ def get_drink_recommendations(current_bac: float, drinker: Drinker):
     return ["Gin and tonic"]
 
 
-def can_User_Drive(
+def can_user_drive(
     weight: int, sex: str, current_bac: float, user_time: int) -> float:
     """
     Calculates the current BAC and time to sober for a person
@@ -41,7 +41,7 @@ def can_User_Drive(
 
     return can_drive
 
-can_User_Drive(85, "Male", 0.1, 10000)
+can_user_Drive(85, "Male", 0.1, 10000)
 
 
 """ # Sample usage
