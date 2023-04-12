@@ -1,3 +1,4 @@
+import dataclasses
 import json
 import os
 from datetime import datetime
@@ -11,6 +12,24 @@ def get_drinkers() -> dict:
         print("Unable to load database file")
     return drinkers
 
+def get_all_beverages_from_db():
+    try:
+        with open("databases/beverages.json", "r") as infile:
+            beverages_from_db = json.load(infile)
+    except Exception as e:
+        print("Unable to load database file", e)
+
+    beverages_list = []
+    for _, beverage in beverages_from_db.items():
+        beverages = Drink(
+            name=beverage["name"],
+            type=beverage["type"],
+            alcohol_content=beverage["alcohol_content"],
+            ingredients=beverage["ingredients"],
+            image_path=beverage["image_path"],
+        )
+        beverages_list.append(beverages)
+    return beverages_list
 
 class Drinker:
     username: str
@@ -23,7 +42,7 @@ class Drinker:
     drive_time: datetime
 
     def __init__(
-        self, username, password, dob, mode, sex, weight, start_time, max_bac, drive_time
+        self, username, password, dob, mode, sex, weight, start_time, max_bac, drive_time=None
     ):
         self.username = username
         self.password = password
@@ -75,7 +94,6 @@ class Drinker:
         drive_time = self.drive_time.isoformat() if self.drive_time else None
         drinkers = get_drinkers()
         drinkers[self.username] = {
-            "username": self.username,
             "password": self.password,
             "dob": self.dob,
             "mode": self.mode,
@@ -95,3 +113,12 @@ class Drinker:
 
     def __str__(self):
         return f"Drinker: {self.username} - {self.dob} - {self.mode} - {self.start_time} - {self.max_bac} - {self.drive_time}"
+
+
+@dataclasses.dataclass
+class Drink:
+    name:str
+    type:str
+    alcohol_content:float
+    ingredients:list
+    image_path:str
