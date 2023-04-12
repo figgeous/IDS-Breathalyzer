@@ -5,8 +5,8 @@ def get_drink_recommendations(current_bac: float, drinker: Drinker):
     return ["Gin and tonic"]
 
 
-def canUserDrive(
-    weight: int, sex: str, currentBAC: float, userTime: int) -> float:
+def can_User_Drive(
+    weight: int, sex: str, current_bac: float, user_time: int) -> float:
     """
     Calculates the current BAC and time to sober for a person
     """
@@ -15,7 +15,6 @@ def canUserDrive(
     # Calculate the BAC per drink for the person and the time it takes to metabolize one drink
     bac_increase_per_drink: float  # Amount BAC raises per 30 ml of pure alcohol
     hours_to_metabolize_one_drink: float  # Seconds to metabolize 30 ml alc. by weight
-    hours_to_seconds = 3600  # 1 hour = 3600 seconds
     if sex == "Male":
         bac_increase_per_drink = 0.0662 * math.exp(-0.014 * weight) 
         hours_to_metabolize_one_drink = (3.9584 * math.exp(-0.013 * weight))
@@ -25,26 +24,24 @@ def canUserDrive(
 
     # Calculate the current BAC and time to sober
   
-    drinksMetabolizedPerHour = 1 / hours_to_metabolize_one_drink
+    drinks_metabolized_per_hour = 1 / hours_to_metabolize_one_drink
     
-    bacMetabolizedPerHour = drinksMetabolizedPerHour * bac_increase_per_drink
+    bac_metabolized_per_Hour = drinks_metabolized_per_hour * bac_increase_per_drink
 
-    timeToSober = (currentBAC - 0.05) / bacMetabolizedPerHour
+    hours_to_sober = (current_bac - 0.05) / bac_metabolized_per_Hour
 
-    print(timeToSober)
-
-    if timeToSober > userTime:
-        canDrive = True
-        print("Your current BAC is:", currentBAC) 
-        print("Which means you CAN drive in ", userTime/3600, " hours.")
+    if hours_to_sober > user_time:
+        can_drive = True
+        print("Your current BAC is:", current_bac) 
+        print("Which means you CAN drive in ", user_time/3600, " hours.")
     else: 
-        canDrive = False
-        print("Your current BAC is:", currentBAC)
-        print("Which means you  CANNOT drive in ", userTime/3600, " hours.")
+        can_drive = False
+        print("Your current BAC is:", current_bac)
+        print("Which means you  CANNOT drive in ", user_time/3600, " hours.")
 
-    return canDrive
+    return can_drive
 
-canUserDrive(85, "Male", 0.1, 10000)
+can_User_Drive(85, "Male", 0.1, 10000)
 
 
 """ # Sample usage
