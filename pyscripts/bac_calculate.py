@@ -1,20 +1,22 @@
 import typing
-
+from .objects import get_all_beverages_from_db
 if typing.TYPE_CHECKING:
     from .objects import Drinker
 
 
 def get_drink_recommendations(current_bac: float, drinker: "Drinker") -> typing.List["Drink"]:
     from .objects import Drink
+
     # Sample drink. To be replaced with drinks from database
-    drink = Drink(
-        name="Gin and tonic",
-        type="Alcoholic",
-        alcohol_content=14,
-        ingredients=["Gin", "Tonic water"],
-        image_path="images/gin_and_tonic.jpg",
-    )
-    return [drink]
+    # drink = Drink(
+    #     name="Gin and tonic",
+    #     type="Alcoholic",
+    #     alcohol_content=14,
+    #     ingredients=["Gin", "Tonic water"],
+    #     image_path="images/gin_and_tonic.jpg",
+    # )
+    all_beverages = get_all_beverages_from_db()
+    return all_beverages[:3]
 
 
 def can_user_drive(

@@ -1,9 +1,113 @@
-{"1":{"name":"Gin and Tonic","type":"Cocktail","alcohol_content":"12%","ingredients":["Gin","Tonic water","Lime juice","Ice"],"image_path":"/images/gin_tonic.jpg"},
-"2":{"name":"Margarita","type":"Cocktail","alcohol_content":"14%","ingredients":["Tequila","Lime juice","Triple sec","Ice","Salt"],"image_path":"/images/margarita.jpg"},
-"3":{"name":"IPA","type":"Beer","alcohol_content":"6.5%","ingredients":["Hops","Malt","Yeast","Water"],"image_path":"/images/ipa.jpg"},
-"4":{"name":"Chardonnay","type":"Wine","alcohol_content":"13%","ingredients":["Grapes","Yeast","Sulfites","Oak chips"],"image_path":"/images/chardonnay.jpg"},
-"5":{"name":"Vodka Martini","type":"Cocktail","alcohol_content":"14%","ingredients":["Vodka","Dry vermouth","Ice","Olive or lemon twist"],"image_path":"/images/vodka_martini.jpg"},
-"6":{"name":"Pinot Noir","type":"Wine","alcohol_content":"14.5%","ingredients":["Grapes","Yeast","Sulfites","Oak barrels"],"image_path":"/images/pinot_noir.jpg"},
-"7":{"name":"Whiskey Sour","type":"Cocktail","alcohol_content":"13%","ingredients":["Whiskey","Lemon juice","Simple syrup","Ice"],"image_path":"/images/whiskey_sour.jpg"},
-"8":{"name":"Stout","type":"Beer","alcohol_content":"5.5%","ingredients":["Hops","Malt","Yeast","Water"],"image_path":"/images/stout.jpg"},
-"9":{"name":"Red Sangria","type":"Cocktail","alcohol_content":"12%","ingredients":["Red wine","Brandy","Orange juice","Lemon juice","Soda water","Fruit (apples, oranges, etc.)"],"image_path":"/images/red_sangria.jpg"}}
+{
+    "1": {
+      "name": "Gin and Tonic",
+      "type": "Cocktail",
+      "alcohol_content": "30",
+      "ingredients": [
+        "Gin",
+        "Tonic water",
+        "Lime juice",
+        "Ice"
+      ],
+      "image_path": "/static/images/gin_tonic.jpg"
+    },
+    "2": {
+      "name": "Margarita",
+      "type": "Cocktail",
+      "alcohol_content": "35",
+      "ingredients": [
+        "Tequila",
+        "Lime juice",
+        "Triple sec",
+        "Ice",
+        "Salt"
+      ],
+      "image_path": "/static/images/margarita.jpg"
+    },
+    "3":{
+      "name": "IPA",
+      "type": "Beer",
+      "alcohol_content": "21.45",
+      "ingredients": [
+        "Hops",
+        "Malt",
+        "Yeast",
+        "Water"
+      ],
+      "image_path": "/static/images/ipa.jpg"
+    },
+    "4":{
+      "name": "Chardonnay",
+      "type": "Wine",
+      "alcohol_content": "19.5",
+      "ingredients": [
+        "Grapes",
+        "Yeast",
+        "Sulfites",
+        "Oak chips"
+      ],
+      "image_path": "/static/images/chardonnay.jpg"
+    },
+    "5":{
+      "name": "Vodka Martini",
+      "type": "Cocktail",
+      "alcohol_content": "14",
+      "ingredients": [
+        "Vodka",
+        "Dry vermouth",
+        "Ice",
+        "Olive or lemon twist"
+      ],
+      "image_path": "/static/images/vodka_martini.jpg"
+    },
+    "6":{
+      "name": "Pinot Noir",
+      "type": "Wine",
+      "alcohol_content": "21.75",
+      "ingredients": [
+        "Grapes",
+        "Yeast",
+        "Sulfites",
+        "Oak barrels"
+      ],
+      "image_path": "/static/images/pinot_noir.jpg"
+    },
+    "7":{
+      "name": "Whiskey Sour",
+      "type": "Cocktail",
+      "alcohol_content": "26",
+      "ingredients": [
+        "Whiskey",
+        "Lemon juice",
+        "Simple syrup",
+        "Ice"
+      ],
+      "image_path": "/static/images/whiskey_sour.jpg"
+    },
+    "8":{
+      "name": "Stout",
+      "type": "Beer",
+      "alcohol_content": "22",
+      "ingredients": [
+        "Hops",
+        "Malt",
+        "Yeast",
+        "Water"
+      ],
+      "image_path": "/static/images/stout.jpg"
+    },
+    "9":{
+      "name": "Red Sangria",
+      "type": "Cocktail",
+      "alcohol_content": "24",
+      "ingredients": [
+        "Red wine",
+        "Brandy",
+        "Orange juice",
+        "Lemon juice",
+        "Soda water",
+        "Fruit (apples, oranges, etc.)"
+      ],
+      "image_path": "/static/images/red_sangria.jpg"
+    }
+}

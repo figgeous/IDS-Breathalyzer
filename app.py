@@ -94,33 +94,33 @@ def account_login():
 
 @app.route('/account/home')
 def account_home():
-    # Get the username from the URL parameter
     username = request.args.get('username')
     logging.info(f"Account page accessed for {username}")
     # Render the account_home.html template with username as parameter
     return render_template('account_home.html', username=username)
 
-@app.route('/account/recommendation')
-def account_result():
-
-    return render_template('recommendation.html')
-
-@app.route('/recommendation', methods=['POST', 'GET'])
+@app.route('/recommendation', methods=['GET', 'POST'])
 def recommendation():
-    logging.info("Recommendation page accessed for user {} with {} request".format(request.form['username'], request.method))
+    logging.info("Recommendation page accessed")
+    # logging.info("Recommendation page accessed for user {} with {} request".format(request.form['username'], request.method))
+
     if request.method == 'POST':
         drinker = Drinker.get_from_db(username=request.form['username'])
-        logging.info("Drinker: " + str(drinker))
+        current_bac = float(request.form['current_bac'])
+        mode = request.form['mode']
+        max_alcohol = float(request.form['max_alcohol'])
+        logging.info("Drinker: {}, current BAC: {}, mode: {}, max alcohol: {}".format(drinker, current_bac, mode, max_alcohol))
+
         recommendations = get_drink_recommendations(
-            current_bac=float(request.form['current_bac']),
-            drinker=drinker,
-            )
-        logging.info("Recommendations: " + str(recommendations))
+            current_bac=current_bac,
+            drinker=drinker,)
+
         context = {"recommendations":recommendations}
+        logging.info("Recommendations: {}".format(recommendations))
         return render_template('recommendation.html', **context)
 
     #GET request
-    return redirect(url_for('/login'))
+    return redirect(url_for('account_login'))
 
 if __name__ == '__main__':
     app.run(debug=True)

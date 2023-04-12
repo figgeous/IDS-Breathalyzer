@@ -71,22 +71,26 @@
     <h1>Welcome {{ username }}</h1>
     <form action="/recommendation" method="POST">
         {#    Use this next line to identify which user the form refers to    #}
-        <input type="hidden" name="username" value="{{ username }}" />
-        <label for="input">Blood alcohol level:</label>
-        <input type="text" name="input" id="input">
-        <label for="category">Choose your mode</label>
-        <select name="category" id="category">
+        <input type="hidden" id="username" name="username" value="{{ username }}" />
+
+        <label for="current_bac">Current BAC</label>
+        <input type="text" id="current_bac" name="current_bac" placeholder="Current BAC">
+
+        <label for="mode">Choose your mode</label>
+        <select id="mode" name="mode">
             <option value="1">1</option>
             <option value="2">2</option>
         </select>
-        <label for="category">Choose your mode</label>
-        <select name="category" id="category">
+
+        <label for="max_alcohol">Choose your mode</label>
+        <select id="max_alcohol" name="max_alcohol">
             <option value="1">Tipsy</option>
             <option value="2">Inbetween</option>
             <option value="3">Drunk</option>
             <option value="4">Blackout</option>
-            <br>
-            <input type="submit" value="Submit">
+        </select>
+
+        <input type="submit" value="Submit">
 {#            <a href="/account/recommendation" class="login-link">Submit</a>#}
     </form>
 </body>
