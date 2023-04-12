@@ -1,8 +1,20 @@
-from objects import Drinker
+import typing
+
+if typing.TYPE_CHECKING:
+    from .objects import Drinker
 
 
-def get_drink_recommendations(current_bac: float, drinker: Drinker):
-    return ["Gin and tonic"]
+def get_drink_recommendations(current_bac: float, drinker: "Drinker") -> typing.List["Drink"]:
+    from .objects import Drink
+    # Sample drink. To be replaced with drinks from database
+    drink = Drink(
+        name="Gin and tonic",
+        type="Alcoholic",
+        alcohol_content=14,
+        ingredients=["Gin", "Tonic water"],
+        image_path="images/gin_and_tonic.jpg",
+    )
+    return [drink]
 
 
 def can_user_drive(
@@ -32,16 +44,16 @@ def can_user_drive(
 
     if hours_to_sober > user_time:
         can_drive = True
-        print("Your current BAC is:", current_bac) 
+        print("Your current BAC is:", current_bac)
         print("Which means you CAN drive in ", user_time/3600, " hours.")
-    else: 
+    else:
         can_drive = False
         print("Your current BAC is:", current_bac)
         print("Which means you  CANNOT drive in ", user_time/3600, " hours.")
 
     return can_drive
 
-can_user_Drive(85, "Male", 0.1, 10000)
+# can_user_drive(85, "Male", 0.1, 10000)
 
 
 """ # Sample usage

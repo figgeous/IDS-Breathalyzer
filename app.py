@@ -2,7 +2,6 @@ from datetime import datetime
 import logging
 from flask import Flask, render_template, request, redirect, url_for
 import json
-import os
 
 from pyscripts.bac_calculate import get_drink_recommendations
 from pyscripts.objects import Drinker
@@ -85,8 +84,6 @@ def account_login():
         if drinker and drinker.password == password:
             logging.info("Valid username and password")
             return redirect(url_for('account_home', username=username))
-            # return redirect(url_for('account_result', username=username))
-            # return redirect(url_for('account_home'))
         elif drinker and drinker.password != password:
             logging.info("Invalid username and/or password")
             return "Invalid password"
@@ -108,16 +105,22 @@ def account_result():
 
     return render_template('recommendation.html')
 
-@app.route('/recommendation', methods=['POST'])
+@app.route('/recommendation', methods=['POST', 'GET'])
 def recommendation():
-    logging.info("Recommendation page accessed for user " + request.form['username'])
-    drinker = Drinker.get_from_db(username=request.form['username'])
-    recommendations = get_drink_recommendations(
-        current_bac=float(request.form['current_bac']),
-        drinker=drinker,
-        )
+    logging.info("Recommendation page accessed for user {} with {} request".format(request.form['username'], request.method))
+    if request.method == 'POST':
+        drinker = Drinker.get_from_db(username=request.form['username'])
+        logging.info("Drinker: " + str(drinker))
+        recommendations = get_drink_recommendations(
+            current_bac=float(request.form['current_bac']),
+            drinker=drinker,
+            )
+        logging.info("Recommendations: " + str(recommendations))
+        context = {"recommendations":recommendations}
+        return render_template('recommendation.html', **context)
 
-    return render_template('recommendation.html', context={"recommendations": recommendations})
+    #GET request
+    return redirect(url_for('/login'))
 
 if __name__ == '__main__':
     app.run(debug=True)
