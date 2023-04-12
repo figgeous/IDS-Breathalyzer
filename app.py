@@ -81,5 +81,10 @@ def account_home():
     # Render the account.html template with username as parameter
     return render_template('account.html', username=username)
 
+@app.route('/account/drinker')
+def account_result():
+
+    return render_template('drinker.html')
+
 if __name__ == '__main__':
     app.run(debug=True)
