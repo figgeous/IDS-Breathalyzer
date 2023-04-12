@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import datetime
 
 
@@ -22,9 +23,10 @@ class Drinker:
     drive_time: datetime
 
     def __init__(
-        self, username, dob, mode, sex, weight, start_time, max_bac, drive_time
+        self, username, password, dob, mode, sex, weight, start_time, max_bac, drive_time
     ):
         self.username = username
+        self.password = password
         self.dob = dob
         self.mode = mode
         self.sex = sex
@@ -47,6 +49,7 @@ class Drinker:
         )
         drinker = Drinker(
             username=username,
+            password=d["password"],
             dob=d["dob"],
             mode=d["mode"],
             sex=d["sex"],
@@ -73,6 +76,7 @@ class Drinker:
         drinkers = get_drinkers()
         drinkers[self.username] = {
             "username": self.username,
+            "password": self.password,
             "dob": self.dob,
             "mode": self.mode,
             "sex": self.sex,
