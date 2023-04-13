@@ -12,7 +12,7 @@ def get_drinkers() -> dict:
         print("Unable to load database file")
     return drinkers
 
-def get_all_beverages_from_db():
+def get_all_beverages_from_db() -> list["Drink"]:
     try:
         with open("databases/beverages.json", "r") as infile:
             beverages_from_db = json.load(infile)
@@ -121,7 +121,7 @@ class Drinker:
         """
         threshold_for_new_session = 12 # hours
         most_recent_session = self.get_most_recent_session()
-        if datetime.now() - most_recent_session.start_time < timedelta(hours=threshold_for_new_session):
+        if most_recent_session and (datetime.now() - most_recent_session.start_time < timedelta(hours=threshold_for_new_session)):
             return most_recent_session
         else:
             return None

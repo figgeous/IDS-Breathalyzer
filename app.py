@@ -29,9 +29,6 @@ def register():
     # Retrieve form data
     username = request.form.get('username')
     password = request.form.get('password')
-    dob = request.form.get('dob')
-    weight = request.form.get('weight')
-    sex = request.form.get('sex')
 
     # Validate form data
     if not username or not password:
@@ -44,9 +41,9 @@ def register():
     new_drinker = Drinker(
         username=username,
         password=password,
-        dob=dob,
-        sex=sex,
-        weight=weight,
+        dob=datetime.fromisoformat(request.form.get("dob")),
+        sex=request.form.get("sex"),
+        weight=request.form.get("weight"),
     )
     new_drinker.save_to_db()
 
@@ -114,9 +111,10 @@ def create_new_session():
 
 @app.route('/measure_bac', methods=['GET', 'POST'])
 def measure_bac():
+    logging.info("Measure_bac page accessed")
     username = request.args.get('username')
     if request.method == 'POST':
-        current_bac = request.get('current_bac')
+        current_bac = request.form.get('current_bac')
         logging.info(f"Post request with current_bac: {current_bac}")
         drinker = Drinker.get_drinker_from_db(username=username)
         recommendations = get_drink_recommendations(
