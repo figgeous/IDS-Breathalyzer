@@ -1,8 +1,22 @@
-from objects import Drinker
+from objects import Drinker, get_all_beverages_from_db
+
+
+def beverage_to_drinks(): # calculates how many drinks a beverage is
+    
+    return
 
 
 def get_drink_recommendations(current_bac: float, drinker: Drinker):
+
+
+
+    
+    
+
+
     return ["Gin and tonic"]
+
+
 
 
 def can_User_Drive(
