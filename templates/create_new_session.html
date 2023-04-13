@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Start a new session</title>
+    </head>
+    <body>
+      <h1>Start a new session</h1>
+        <form action="/create_new_session" method="POST">
+            <label for="max_alcohol">Choose your mode</label>
+            <select id="max_alcohol" name="max_alcohol">
+                <option value="1">Tipsy</option>
+                <option value="2">Inbetween</option>
+                <option value="3">Drunk</option>
+                <option value="4">Blackout</option>
+            </select>
+            <label for="drive_time">Drive time:</label>
+            <input type="number" id="drive_time" name="drive_time" min="0" max="24" value="0">
+
+      <input type="submit" value="Start session">
+    </form>
+    </body>
+</html>
