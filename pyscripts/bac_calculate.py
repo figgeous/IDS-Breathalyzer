@@ -1,6 +1,15 @@
 from objects import Drinker
 import json
 import math
+import datetime
+
+drinker = Drinker(
+    username="123",
+    password="123",
+    dob=datetime.datetime(2000, 1, 1),
+    sex="male",
+    weight=123
+)
 
 with open('pyscripts\\beverages_updates.json') as f:
     data = json.load(f)
@@ -90,8 +99,10 @@ def can_user_drive(
 
     return can_drive
 
+can_user_drive(Drinker, 0.07, 5000)
 
-# Sample usage
+
+""" # Sample usage
 weight = 84.1
 sex = "Male"
 drinks = 10  # number of drinks (30 ml pure alcohol)
@@ -115,3 +126,4 @@ print(
     round(seconds_to_sober / 3600, 2),
     " hours before you can drive again.",
 )
+ """
