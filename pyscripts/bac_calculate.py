@@ -1,25 +1,13 @@
-from objects import Drinker, get_all_beverages_from_db
-
-
-def beverage_to_drinks(): # calculates how many drinks a beverage is
-    
-    return
+from objects import Drinker
 
 
 def get_drink_recommendations(current_bac: float, drinker: Drinker):
-
-
-
-    
-    
-
-
     return ["Gin and tonic"]
 
 
 
 
-def can_User_Drive(
+def can_user_drive(
     weight: int, sex: str, current_bac: float, user_time: int) -> float:
     """
     Calculates the current BAC and time to sober for a person
@@ -46,16 +34,16 @@ def can_User_Drive(
 
     if hours_to_sober > user_time:
         can_drive = True
-        print("Your current BAC is:", current_bac) 
+        print("Your current BAC is:", current_bac)
         print("Which means you CAN drive in ", user_time/3600, " hours.")
-    else: 
+    else:
         can_drive = False
         print("Your current BAC is:", current_bac)
         print("Which means you  CANNOT drive in ", user_time/3600, " hours.")
 
     return can_drive
 
-can_User_Drive(85, "Male", 0.1, 10000)
+# can_user_drive(85, "Male", 0.1, 10000)
 
 
 """ # Sample usage

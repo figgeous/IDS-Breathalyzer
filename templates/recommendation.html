@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Here are your recommendations!</title>
+    {% for recommendation in recommendations %}
+    <h1>{{ recommendation.name }}</h1>
+    <h2>{{ recommendation.type }}</h2>
+    <h3>{{ recommendation.ingredients }}</h3>
+    <img src="{{ recommendation.image_path }}" alt="Images of a beverage">
+    {% endfor %}
+
+</head>
+<body>
+<img src="/static/images/red_sangria.jpg">
+
+</body>
+</html>

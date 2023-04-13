@@ -1,6 +1,5 @@
 import dataclasses
 import json
-import os
 from datetime import datetime
 
 
@@ -24,7 +23,7 @@ def get_all_beverages_from_db():
         beverages = Drink(
             name=beverage["name"],
             type=beverage["type"],
-            alcohol_content=beverage["alcohol_content"],
+            alcohol_content=float(beverage["alcohol_content"]),
             ingredients=beverage["ingredients"],
             image_path=beverage["image_path"],
         )
@@ -114,6 +113,11 @@ class Drinker:
     def __str__(self):
         return f"Drinker: {self.username} - {self.dob} - {self.mode} - {self.start_time} - {self.max_bac} - {self.drive_time}"
 
+class Session:
+    mode: int
+    max_alcohol: float
+    start_time: datetime
+    drive_time: datetime
 
 @dataclasses.dataclass
 class Drink:
