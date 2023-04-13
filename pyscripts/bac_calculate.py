@@ -1,8 +1,10 @@
-from objects import Drinker
+from .objects import Drinker, get_all_beverages_from_db
 
 
 def get_drink_recommendations(current_bac: float, drinker: Drinker):
-    return ["Gin and tonic"]
+    # For now return the first three beverages from the db
+    # TODO: replace with proper drink recommendations
+    return get_all_beverages_from_db()[:3]
 
 
 
