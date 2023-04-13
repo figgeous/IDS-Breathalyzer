@@ -19,6 +19,12 @@ def user_bac_increase_per_drink(sex: str, weight: float):
 
 
 def recommend_drink(sex: str, weight: float, current_bac: float, max_bac: float):
+    current_bac = round(current_bac, 2)
+    max_bac = round(max_bac, 2)
+
+    if current_bac >= max_bac:
+        return "You've had too much to drink! You can't drink more without going over your set limit {}% BAC".format(max_bac)
+    
     bac_increase_per_drink = user_bac_increase_per_drink(sex, weight)
 
     # Determine the maximum number of drinks the user can have before reaching max_bac
@@ -39,7 +45,7 @@ def recommend_drink(sex: str, weight: float, current_bac: float, max_bac: float)
     top_three_drinks = [drink["name"] for drink in recommended_drinks[:3]]
 
     if not top_three_drinks:
-        return "You've had too much to drink! You can't drink more without going over your set limit {}% BAC".format(max_bac)
+        return "There are no drinks you can have without going over your set limit {}% BAC".format(max_bac)
     else: 
         return "Recommended drinks: {}, {} or {}".format(top_three_drinks[0], top_three_drinks[1], top_three_drinks[2])
 
@@ -47,7 +53,7 @@ def recommend_drink(sex: str, weight: float, current_bac: float, max_bac: float)
 
 
 
-print(recommend_drink("Male", 81.3, 0.05, 0.1))
+print(recommend_drink("Male", 81.3, 0.085, 0.1))
 
 
 
