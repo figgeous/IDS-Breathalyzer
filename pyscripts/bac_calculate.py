@@ -1,4 +1,4 @@
-from objects import Drinker
+from .objects import Drinker
 import json
 import math
 
@@ -7,25 +7,28 @@ with open('pyscripts\\beverages_updates.json') as f:
 
 beverages = data['beverages']
 
+def get_drink_recommendations():
+    return []
 
-def user_bac_increase_per_drink(sex: str, weight: float):
-    if sex == "male":
-        bac_increase_per_drink = 0.0662 * math.exp(-0.014 * weight)
+def user_bac_increase_per_drink(drinker:Drinker):
+    if drinker.sex == "male":
+        bac_increase_per_drink = 0.0662 * math.exp(-0.014 * drinker.weight)
     else: #Female
-        bac_increase_per_drink = 0.1004 * math.exp(-0.016 * weight)
+        bac_increase_per_drink = 0.1004 * math.exp(-0.016 * drinker.weight)
 
     return bac_increase_per_drink
 
 
 
-def recommend_drink(sex: str, weight: float, current_bac: float, max_bac: float):
+def recommend_drink(drinker:Drinker, current_bac:float):
     current_bac = round(current_bac, 2)
-    max_bac = round(max_bac, 2)
+    current_session = drinker.get_current_session()
+    max_bac = round(current_session.max_bac, 2)
 
     if current_bac >= max_bac:
         return "You've had too much to drink! You can't drink more without going over your set limit {}% BAC".format(max_bac)
     
-    bac_increase_per_drink = user_bac_increase_per_drink(sex, weight)
+    bac_increase_per_drink = user_bac_increase_per_drink(drinker.sex, drinker.weight)
 
     # Determine the maximum number of drinks the user can have before reaching max_bac
     max_drinks = (max_bac - current_bac) / bac_increase_per_drink
@@ -67,7 +70,7 @@ print(recommend_drink("Male", 81.3, 0.085, 0.1))
 
 
 def can_user_drive(
-    weight: int, sex: str, current_bac: float, user_time: int) -> float:
+    drinker:Drinker, current_bac: float, user_time: int) -> float:
     """
     Calculates the current BAC and time to sober for a person
     """
@@ -76,12 +79,12 @@ def can_user_drive(
     # Calculate the BAC per drink for the person and the time it takes to metabolize one drink
     bac_increase_per_drink: float  # Amount BAC raises per 30 ml of pure alcohol
     hours_to_metabolize_one_drink: float  # Seconds to metabolize 30 ml alc. by weight
-    if sex == "Male":
-        bac_increase_per_drink = 0.0662 * math.exp(-0.014 * weight) 
-        hours_to_metabolize_one_drink = (3.9584 * math.exp(-0.013 * weight))
+    if drinker.sex == "Male":
+        bac_increase_per_drink = 0.0662 * math.exp(-0.014 * drinker.weight)
+        hours_to_metabolize_one_drink = (3.9584 * math.exp(-0.013 * drinker.weight))
     else:  # Female
-        bac_increase_per_drink = 0.1004 * math.exp(-0.016 * weight)
-        hours_to_metabolize_one_drink = (5.1596 * math.exp(-0.014 * weight))
+        bac_increase_per_drink = 0.1004 * math.exp(-0.016 * drinker.weight)
+        hours_to_metabolize_one_drink = (5.1596 * math.exp(-0.014 * drinker.weight))
 
     # Calculate the current BAC and time to sober
   
@@ -101,8 +104,6 @@ def can_user_drive(
         print("Which means you  CANNOT drive in ", user_time/3600, " hours.")
 
     return can_drive
-
-# can_user_drive(85, "Male", 0.1, 10000)
 
 
 """ # Sample usage
