@@ -68,30 +68,13 @@
     </style>
 </head>
 <body>
-    <h1>Welcome {{ username }}</h1>
-    <form action="/recommendation" method="POST">
-        {#    Use this next line to identify which user the form refers to    #}
-        <input type="hidden" id="username" name="username" value="{{ username }}" />
+    <h1>Welcome {{ drinker.username }}</h1>
+    {% if current_session %}
+    <p>Your last session started at {{ current_session.start_time }}</p>
+    {% endif %}>
 
-        <label for="current_bac">Current BAC</label>
-        <input type="text" id="current_bac" name="current_bac" placeholder="Current BAC">
+    <a href="{{ url_for('create_new_session', username=drinker.username) }}">Start new session</a>
 
-        <label for="mode">Choose your mode</label>
-        <select id="mode" name="mode">
-            <option value="1">1</option>
-            <option value="2">2</option>
-        </select>
-
-        <label for="max_alcohol">Choose your mode</label>
-        <select id="max_alcohol" name="max_alcohol">
-            <option value="1">Tipsy</option>
-            <option value="2">Inbetween</option>
-            <option value="3">Drunk</option>
-            <option value="4">Blackout</option>
-        </select>
-
-        <input type="submit" value="Submit">
-{#            <a href="/account/recommendation" class="login-link">Submit</a>#}
-    </form>
+    <a href="{{ url_for('measure_bac', username=username) }}">Measure your BAC</a>
 </body>
 </html>
