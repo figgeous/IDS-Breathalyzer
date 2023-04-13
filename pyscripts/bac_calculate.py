@@ -1,10 +1,61 @@
-from .objects import Drinker, get_all_beverages_from_db
+from objects import Drinker
+import json
+import math
+
+with open('pyscripts\\beverages_updates.json') as f:
+    data = json.load(f)
+
+beverages = data['beverages']
 
 
-def get_drink_recommendations(current_bac: float, drinker: Drinker):
-    # For now return the first three beverages from the db
-    # TODO: replace with proper drink recommendations
-    return get_all_beverages_from_db()[:3]
+def user_bac_increase_per_drink(sex: str, weight: float):
+    if sex == "male":
+        bac_increase_per_drink = 0.0662 * math.exp(-0.014 * weight)
+    else: #Female
+        bac_increase_per_drink = 0.1004 * math.exp(-0.016 * weight)
+
+    return bac_increase_per_drink
+
+
+
+def recommend_drink(sex: str, weight: float, current_bac: float, max_bac: float):
+    bac_increase_per_drink = user_bac_increase_per_drink(sex, weight)
+
+    # Determine the maximum number of drinks the user can have before reaching max_bac
+    max_drinks = (max_bac - current_bac) / bac_increase_per_drink
+
+    # Create a list to store the recommended drinks
+    recommended_drinks = []
+
+    # Loop through the list of drinks and check if the user can have that many drinks
+    for drink in beverages: 
+        if float(drink["total_drinks"]) <= max_drinks:
+            recommended_drinks.append(drink)
+
+    # Sort the recommenended_drinks list by total_drinks
+    recommended_drinks.sort(key=lambda x: float(x["total_drinks"]), reverse=True)
+
+    # Get the top three recommened drinks
+    top_three_drinks = [drink["name"] for drink in recommended_drinks[:3]]
+
+    if not top_three_drinks:
+        return "You've had too much to drink! You can't drink more without going over your set limit {}% BAC".format(max_bac)
+    else: 
+        return "Recommended drinks: {}, {} or {}".format(top_three_drinks[0], top_three_drinks[1], top_three_drinks[2])
+
+
+
+
+
+print(recommend_drink("Male", 81.3, 0.05, 0.1))
+
+
+
+
+
+
+
+
 
 
 
@@ -14,7 +65,7 @@ def can_user_drive(
     """
     Calculates the current BAC and time to sober for a person
     """
-    import math
+
 
     # Calculate the BAC per drink for the person and the time it takes to metabolize one drink
     bac_increase_per_drink: float  # Amount BAC raises per 30 ml of pure alcohol
