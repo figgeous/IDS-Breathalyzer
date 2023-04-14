@@ -77,12 +77,12 @@
     Your current drive time is: {{ current_session.drive_time.strftime('%H:%M') }}
     <br>
         {% endif %}
+    <a href="{{ url_for('measure_bac', user_id=drinker.id) }}">Get drink recommendation</a>
     {% else %}
     <p>You have not started a session yet</p>
     {% endif %}
 
-    <br>
-    <a href="{{ url_for('measure_bac', user_id=drinker.id) }}">Get drink recommendation</a>
+
     <br>
     <a href="{{ url_for('create_new_session', user_id=drinker.id) }}">Start new session</a>
     <br>
