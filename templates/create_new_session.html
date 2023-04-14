@@ -5,19 +5,55 @@
     <title>Start a new session</title>
     </head>
     <body>
+    <label for="toggle-button">Are you driving?</label>
+    <button id="toggle-button" onclick="toggleContents(driving=true)">Yes</button>
+    <button id="toggle-button" onclick="toggleContents(driving=false)">No</button>
+
+<div id="content1" style="display: none;">
       <h1>Start a new session</h1>
         <form action="/create_new_session" method="POST">
+            <input type="hidden" id="user_id" name="user_id" value="{{ user_id }}" />
             <label for="max_alcohol">Choose your drinking goal</label>
             <select id="max_alcohol" name="max_alcohol">
-                <option value="1">Tipsy</option>
-                <option value="2">Inbetween</option>
-                <option value="3">Drunk</option>
-                <option value="4">Blackout</option>
+                <option value="Tipsy">Tipsy</option>
+                <option value="Inbetween">Inbetween</option>
+                <option value="Drunk">Drunk</option>
+                <option value="Blackout">Blackout</option>
+            </select>
+      <input type="submit" value="Start session">
+    </form>
+</div>
+
+<div id="content2" style="display: none;">
+      <h1>Start a new session</h1>
+        <form action="/create_new_session" method="POST">
+            <input type="hidden" id="user_id" name="user_id" value="{{ user_id }}" />
+            <label for="max_alcohol">Choose your drinking goal</label>
+            <select id="max_alcohol" name="max_alcohol">
+                <option value="Tipsy">Tipsy</option>
+                <option value="Inbetween">Inbetween</option>
+                <option value="Drunk">Drunk</option>
+                <option value="Blackout">Blackout</option>
             </select>
             <label for="drive_time">Drive time:</label>
             <input type="time" id="drive_time" name="drive_time">
-
       <input type="submit" value="Start session">
     </form>
+</div>
+
+<script>
+   function toggleContents(driving) {
+      var content1 = document.getElementById("content1");
+      var content2 = document.getElementById("content2");
+      content1.style.display = "none";
+      content2.style.display = "none";
+      if (driving === true) {
+         content2.style.display = "block";
+      } else {
+         content1.style.display = "block";
+      }
+   }
+</script>
+
     </body>
 </html>

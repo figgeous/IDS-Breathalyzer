@@ -5,11 +5,15 @@
     <title>Here are your recommendations!</title>
 </head>
 <body>
+{% if recommendations %}
     {% for recommendation in recommendations %}
     <h1>{{ recommendation.name }}</h1>
     <h2>{{ recommendation.type }}</h2>
     <h3>{{ recommendation.ingredients }}</h3>
     <img src="{{ recommendation.image_path }}" alt="Images of a beverage">
     {% endfor %}
+{% else %}
+    <h1>Sorry, we don't have any recommendations for you!</h1>
+{% endif %}
 </body>
 </html>

@@ -1,10 +1,12 @@
 import dataclasses
 import json
 import logging
-from datetime import datetime, timedelta
+import math
+from datetime import datetime
+from datetime import timedelta
 
 
-def get_drinkers() -> dict:
+def get_all_drinkers() -> dict[str, dict]:
     try:
         with open("databases/users.json", "r") as infile:
             drinkers = json.load(infile)
@@ -12,7 +14,8 @@ def get_drinkers() -> dict:
         print("Unable to load database file")
     return drinkers
 
-def get_all_beverages_from_db() -> list["Drink"]:
+
+def get_all_drinks_from_db() -> list["Drink"]:
     try:
         with open("databases/beverages.json", "r") as infile:
             beverages_from_db = json.load(infile)
@@ -31,39 +34,98 @@ def get_all_beverages_from_db() -> list["Drink"]:
         beverages_list.append(beverages)
     return beverages_list
 
-def get_session_from_db(id: int) -> dict:
-    sessions_from_db = get_all_sessions_from_db()
-    return sessions_from_db.get(str(id), None)
 
-def get_session_object_from_db(id:int) -> "Session":
-    session_dict = get_session_from_db(id=id)
-    return Session(
-        id=id,
-        username=session_dict["username"],
-        max_alcohol=float(session_dict["max_alcohol"]),
-        start_time=datetime.fromisoformat(session_dict["start_time"]),
-        drive_time=datetime.fromisoformat(session_dict["drive_time"]),
-    )
-def get_all_sessions_from_db() -> dict[str,dict]:
+# def get_session_object_from_db(id:int) -> "Session":
+#     sessions_from_db = get_all_sessions_from_db()
+#     session_dict = sessions_from_db.get(str(id), None)
+#     if session_dict:
+#         return Session(
+#             id=id,
+#             user_id=int(session_dict["user_id"]),
+#             max_alcohol=float(session_dict["max_alcohol"]),
+#             start_time=datetime.fromisoformat(session_dict["start_time"]),
+#             drive_time=datetime.fromisoformat(session_dict["drive_time"]),
+#         )
+#     else:
+#         return None
+
+
+def get_all_sessions_from_db() -> dict[str, dict]:
     try:
         with open("databases/sessions.json", "r") as infile:
             sessions_from_db = json.load(infile)
     except Exception as e:
         logging.error("Unable to load database file", e)
     return sessions_from_db
+
+
 def get_all_session_objects_from_db() -> list["Session"]:
     sessions_from_db = get_all_sessions_from_db()
     sessions = []
     for session_id, session_from_db in sessions_from_db.items():
+        if drivetime := session_from_db["drive_time"]:
+            drivetime = datetime.fromisoformat(drivetime)
+        else:
+            drivetime = None
         session = Session(
             id=int(session_id),
-            username=session_from_db["username"],
+            user_id=int(session_from_db["user_id"]),
             max_alcohol=float(session_from_db["max_alcohol"]),
             start_time=datetime.fromisoformat(session_from_db["start_time"]),
-            drive_time=datetime.fromisoformat(session_from_db["drive_time"]),
+            drive_time=drivetime,
         )
         sessions.append(session)
     return sessions
+
+
+def get_drink_candidates_less_than_max_alcohol(
+    drinker: "Drinker", current_bac: float
+) -> list:
+    """
+    Returns a list of drinks that are less than the max alcohol for the current session. The list isn't sorted.
+    """
+    current_session = drinker.get_current_session()
+    assert current_session, "No current session"
+
+    current_bac = 0.01
+    all_drinks = get_all_drinks_from_db()
+
+    # Get drinks that are less than the max alcohol for the current session
+    candidate_drinks = []
+    for drink in all_drinks:
+        if (
+            drinker.bac_after_drink(drink=drink, current_bac=current_bac)
+            < current_session.max_alcohol
+        ):
+            candidate_drinks.append(drink)
+    return candidate_drinks
+
+
+def get_drink_candidates_for_drive_time(drinker: "Drinker", current_bac: float) -> list:
+    """
+    Returns a list of drinks that are less than the max alcohol for the current session and that will allow the user to
+    drive by the drive time of the current session. The list is sorted by alcohol content, highest to lowest. The list
+    isn't sorted.
+    """
+    current_session = drinker.get_current_session()
+    drinks_candidates_less_that_max_alcohol = (
+        get_drink_candidates_less_than_max_alcohol(
+            drinker=drinker, current_bac=current_bac
+        )
+    )
+    candidate_drinks = []
+    for drink in drinks_candidates_less_that_max_alcohol:
+        bac_after_drink = drinker.bac_after_drink(drink=drink, current_bac=current_bac)
+        number_of_seconds_until_can_drive = drinker.number_seconds_until_can_drive(
+            current_bac=bac_after_drink
+        )
+        if (
+            number_of_seconds_until_can_drive
+            > current_session.seconds_until_drive_time()
+        ):
+            candidate_drinks.append(drink)
+    return candidate_drinks
+
 
 class Drinker:
     id: int
@@ -72,9 +134,7 @@ class Drinker:
     sex: str
     weight: int
 
-    def __init__(
-        self, username, password, dob, sex, weight, id = None
-    ):
+    def __init__(self, username, password, dob, sex, weight, id=None):
         self.id = self._get_new_id() if id is None else id
         self.username = username
         self.password = password
@@ -82,11 +142,11 @@ class Drinker:
         self.sex = sex.lower()
         self.weight = weight
 
-    def _get_new_id(self):
+    def _get_new_id(self) -> int:
         """
-        Returns the next available id for a session
+        Returns the next available id for a drinker
         """
-        drinkers = get_drinkers()
+        drinkers = get_all_drinkers()
         if drinkers:
             # convert keys to ints and return the max + 1
             return max([int(k) for k in drinkers.keys()]) + 1
@@ -94,20 +154,36 @@ class Drinker:
             return 1
 
     @staticmethod
-    def get_drinker_from_db(user_id: int) -> "Drinker":
-        drinkers = get_drinkers()
+    def get_drinker_from_db(
+        username: str = None, user_id: int = None
+    ) -> "Drinker" or None:
+        """
+        Returns a Drinker object if the user exists in the database, otherwise returns None
+        """
+        assert username or user_id, "Must provide either username or user_id"
+        all_drinkers = get_all_drinkers()
 
-        if user_id not in drinkers:
+        selected_id, selected_drinker = None, None
+        for id, drinker in all_drinkers.items():
+            if (user_id and user_id == int(id)) or (
+                username and drinker["username"] == username
+            ):
+                selected_id, selected_drinker = int(id), drinker
+                break
+
+        # If no drinker was found, return None
+        if not selected_drinker:
             return None
 
-        d = drinkers[user_id]
+        assert selected_id
+
         drinker = Drinker(
-            id=user_id,
-            username=d["username"],
-            password=d["password"],
-            dob=d["dob"],
-            sex=d["sex"],
-            weight=int(d["weight"]),
+            id=int(selected_id),
+            username=selected_drinker["username"],
+            password=selected_drinker["password"],
+            dob=selected_drinker["dob"],
+            sex=selected_drinker["sex"],
+            weight=int(selected_drinker["weight"]),
         )
         return drinker
 
@@ -116,7 +192,7 @@ class Drinker:
         # Get session for user with most recent start time
         most_recent_session = None
         for session in sessions_from_db:
-            if session.username != self.username:
+            if session.user_id != self.id:
                 continue
             if most_recent_session is None:
                 most_recent_session = session
@@ -127,35 +203,73 @@ class Drinker:
     def get_current_session(self) -> "Session" or None:
         """
         Returns the current session if it exists, otherwise returns None. The current session is defined as the most
-        recent session that is less than 12 hours old.
+        recent session that is less than 24 hours old.
         """
-        threshold_for_new_session = 12 # hours
-        most_recent_session = self.get_most_recent_session()
-        if most_recent_session and (datetime.now() - most_recent_session.start_time < timedelta(hours=threshold_for_new_session)):
-            return most_recent_session
-        else:
-            return None
+        threshold = timedelta(hours=24)
 
-    def minutes_since_start_time(self) -> int:
-        time_diff = datetime.now() - self.start_time
-        return round(time_diff.total_seconds() / 60)
+        if most_recent_session := self.get_most_recent_session():
+            time_diff = datetime.now() - most_recent_session.start_time
+            logging.info(
+                f"Most recent session: {most_recent_session}, time diff: {time_diff}"
+            )
+            if datetime.now() - most_recent_session.start_time < threshold:
+                return most_recent_session
 
-    def minutes_until_drive_time(self) -> int:
-        if self.drive_time:
-            time_diff = self.drive_time - datetime.now()
-            return round(time_diff.total_seconds() / 60)
-        else:
-            return
+        return None
+
+    def bac_after_drink(self, drink: "Drink", current_bac: float) -> float:
+        """
+        Returns the increase in BAC for a drink, taking current BAC into account
+        """
+        standard_drinks = (
+            30 / drink.alcohol_content
+        )  # 30ml of alcohol in a standard drink
+
+        if self.sex == "male":
+            a, b = 0.0662, -0.014
+        else:  # Female
+            a, b = 0.1004, -0.016
+        bac_increase_per_drink = a * math.exp(b * self.weight)
+
+        return current_bac + (bac_increase_per_drink * standard_drinks)
+
+    def number_seconds_until_can_drive(self, current_bac: float) -> float:
+        """
+        Returns the number of seconds until the person can drive, or 0 if they can drive now
+        """
+        if current_bac <= 0.05:
+            return 0
+
+        # Calculate the BAC per drink for the person and the time it takes to metabolize one drink
+        if self.sex == "male":
+            a1, a2 = 0.0662, -0.014
+            b1, b2 = 3.9584, -0.013
+        else:  # female
+            a1, a2 = 0.1004, -0.016
+            b1, b2 = 5.1596, -0.014
+        # Amount BAC raises per 30 ml of pure alcohol
+        bac_increase_per_drink = a1 * math.exp(a2 * self.weight)
+        # Seconds to metabolize 30 ml alc. by weight
+        seconds_to_metabolize_one_drink = (b1 * math.exp(b2 * self.weight)) * 3600
+
+        # Calculate the current BAC and time to sober
+        drinks_metabolized_per_second = 1 / seconds_to_metabolize_one_drink
+        bac_metabolized_per_second = (
+            drinks_metabolized_per_second * bac_increase_per_drink
+        )
+        seconds_to_sober = (current_bac - 0.05) / bac_metabolized_per_second
+
+        return seconds_to_sober
 
     def save_to_db(self):
-        drinkers = get_drinkers()
-        drinkers[self.id] = {
+        drinkers = get_all_drinkers()
+        drinkers[str(self.id)] = {
             "username": self.username,
             "password": self.password,
             # Convert datetime to isoformat string
             "dob": self.dob.isoformat(),
             "sex": self.sex,
-            "weight": self.weight,
+            "weight": str(self.weight),
         }
         try:
             with open("databases/users.json", "w") as outfile:
@@ -168,12 +282,20 @@ class Drinker:
     def __str__(self):
         return f"Drinker: {self.username}"
 
+
 class Session:
     id: int
-    user_id: int # Foreign key
+    user_id: int  # Foreign key
     max_alcohol: float
     start_time: datetime
     drive_time: datetime
+    qualitative_to_bac: dict = {
+        "Tipsy": 0.03,
+        "Inbetween": 0.08,
+        "Drunk": 0.15,
+        "Blackout": 0.25,
+    }
+    bac_to_qualitative: dict
 
     def __init__(self, user_id, start_time, max_alcohol=None, drive_time=None, id=None):
         self.id = self._get_new_id() if id is None else id
@@ -181,6 +303,13 @@ class Session:
         self.max_alcohol = max_alcohol
         self.start_time = start_time
         self.drive_time = drive_time
+        self.bac_to_qualitative = {v: k for k, v in self.qualitative_to_bac.items()}
+
+    def get_qualitative_max_alcohol(self) -> float:
+        """
+        Returns the qualitative BAC for the session
+        """
+        return self.bac_to_qualitative[self.max_alcohol]
 
     def _get_new_id(self):
         """
@@ -193,13 +322,29 @@ class Session:
         else:
             return 1
 
+    def seconds_since_start_time(self) -> int:
+        time_diff = datetime.now() - self.start_time
+        return round(time_diff.total_seconds() / 60)
+
+    def seconds_until_drive_time(self) -> int or None:
+        if self.drive_time:
+            time_diff = self.drive_time - datetime.now()
+            return round(time_diff.total_seconds() / 3600)
+        else:
+            return
+
     def save_to_db(self):
+        assert self.user_id, "User id must be set"
+        assert self.start_time, "Start time must be set"
+        assert self.max_alcohol, "Max alcohol must be set"
+
         sessions = get_all_sessions_from_db()
+        drive_time = self.drive_time.isoformat() if self.drive_time else None
         session = {
             "user_id": self.user_id,
             "max_alcohol": self.max_alcohol,
             "start_time": self.start_time.isoformat(),
-            "drive_time": self.drive_time.isoformat(),
+            "drive_time": drive_time,
         }
         sessions[str(self.id)] = session
         try:
@@ -211,12 +356,13 @@ class Session:
         return sessions
 
     def __str__(self):
-        return f"Session: {self.id} - {self.username} - {self.start_time} - {self.max_alcohol} - {self.drive_time}"
+        return f"Session: {self.id} - {self.user_id} - {self.start_time} - {self.max_alcohol} - {self.drive_time}"
+
 
 @dataclasses.dataclass
 class Drink:
-    name:str
-    type:str
-    alcohol_content:float
-    ingredients:list
-    image_path:str
+    name: str
+    type: str
+    alcohol_content: float
+    ingredients: list
+    image_path: str
