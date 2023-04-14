@@ -1,6 +1,15 @@
-from .objects import Drinker
+from objects import Drinker
 import json
 import math
+import datetime
+
+drinker = Drinker(
+    username="123",
+    password="123",
+    dob=datetime.datetime(2000, 1, 1),
+    sex="male",
+    weight=123
+)
 
 with open('pyscripts\\beverages_updates.json') as f:
     data = json.load(f)
@@ -54,21 +63,6 @@ def recommend_drink(drinker:Drinker, current_bac:float):
 
 
 
-
-
-print(recommend_drink("Male", 81.3, 0.085, 0.1))
-
-
-
-
-
-
-
-
-
-
-
-
 def can_user_drive(
     drinker:Drinker, current_bac: float, user_time: int) -> float:
     """
@@ -78,23 +72,23 @@ def can_user_drive(
 
     # Calculate the BAC per drink for the person and the time it takes to metabolize one drink
     bac_increase_per_drink: float  # Amount BAC raises per 30 ml of pure alcohol
-    hours_to_metabolize_one_drink: float  # Seconds to metabolize 30 ml alc. by weight
+    seconds_to_metabolize_one_drink: float  # Seconds to metabolize 30 ml alc. by weight
     if drinker.sex == "Male":
         bac_increase_per_drink = 0.0662 * math.exp(-0.014 * drinker.weight)
-        hours_to_metabolize_one_drink = (3.9584 * math.exp(-0.013 * drinker.weight))
+        seconds_to_metabolize_one_drink = (3.9584 * math.exp(-0.013 * drinker.weight)) * 3600
     else:  # Female
         bac_increase_per_drink = 0.1004 * math.exp(-0.016 * drinker.weight)
-        hours_to_metabolize_one_drink = (5.1596 * math.exp(-0.014 * drinker.weight))
+        seconds_to_metabolize_one_drink = (5.1596 * math.exp(-0.014 * drinker.weight)) * 3600
 
     # Calculate the current BAC and time to sober
   
-    drinks_metabolized_per_hour = 1 / hours_to_metabolize_one_drink
+    drinks_metabolized_per_second = 1 / seconds_to_metabolize_one_drink
     
-    bac_metabolized_per_Hour = drinks_metabolized_per_hour * bac_increase_per_drink
+    bac_metabolized_per_second = drinks_metabolized_per_second * bac_increase_per_drink
 
-    hours_to_sober = (current_bac - 0.05) / bac_metabolized_per_Hour
+    seconds_to_sober = (current_bac - 0.05) / bac_metabolized_per_second
 
-    if hours_to_sober > user_time:
+    if seconds_to_sober > user_time:
         can_drive = True
         print("Your current BAC is:", current_bac)
         print("Which means you CAN drive in ", user_time/3600, " hours.")
@@ -104,6 +98,8 @@ def can_user_drive(
         print("Which means you  CANNOT drive in ", user_time/3600, " hours.")
 
     return can_drive
+
+can_user_drive(Drinker, 0.07, 5000)
 
 
 """ # Sample usage
@@ -129,4 +125,5 @@ print(
     "Because you're this drunk, you have to wait ",
     round(seconds_to_sober / 3600, 2),
     " hours before you can drive again.",
-) """
+)
+ """
