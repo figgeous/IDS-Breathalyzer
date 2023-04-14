@@ -75,6 +75,6 @@
 
     <a href="{{ url_for('create_new_session', username=drinker.username) }}">Start new session</a>
 
-    <a href="{{ url_for('measure_bac', username=username) }}">Measure your BAC</a>
+    <a href="{{ url_for('measure_bac', username=drinker.username) }}">Measure your BAC</a>
 </body>
 </html>

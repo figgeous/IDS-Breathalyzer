@@ -21,13 +21,13 @@ from pyscripts.objects import get_all_sessions_from_db, Session, get_session_fro
 #     )
 # session.save_to_db()
 #
-# drinker = Drinker(
-#     username="123",
-#     password="123",
-#     dob=datetime.datetime(2000, 1, 1),
-#     sex="Male",
-#     weight=123,
-# )
+drinker = Drinker(
+    username="123",
+    password="123",
+    dob=datetime.datetime(2000, 1, 1),
+    sex="Male",
+    weight=123,
+)
 # drinker.save_to_db()
 
 drinker = Drinker.get_drinker_from_db(username="123")

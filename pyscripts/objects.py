@@ -40,7 +40,6 @@ def get_session_object_from_db(id:int) -> "Session":
     return Session(
         id=id,
         username=session_dict["username"],
-        mode=session_dict["mode"],
         max_alcohol=float(session_dict["max_alcohol"]),
         start_time=datetime.fromisoformat(session_dict["start_time"]),
         drive_time=datetime.fromisoformat(session_dict["drive_time"]),
@@ -59,7 +58,6 @@ def get_all_session_objects_from_db() -> list["Session"]:
         session = Session(
             id=int(session_id),
             username=session_from_db["username"],
-            mode=int(session_from_db["mode"]),
             max_alcohol=float(session_from_db["max_alcohol"]),
             start_time=datetime.fromisoformat(session_from_db["start_time"]),
             drive_time=datetime.fromisoformat(session_from_db["drive_time"]),
@@ -68,32 +66,44 @@ def get_all_session_objects_from_db() -> list["Session"]:
     return sessions
 
 class Drinker:
+    id: int
     username: str
     dob: datetime
-    mode: int
     sex: str
     weight: int
-    session: int or None # Foreign key to current session
 
     def __init__(
-        self, username, password, dob, sex, weight
+        self, username, password, dob, sex, weight, id = None
     ):
+        self.id = self._get_new_id() if id is None else id
         self.username = username
         self.password = password
         self.dob = dob
         self.sex = sex.lower()
         self.weight = weight
 
+    def _get_new_id(self):
+        """
+        Returns the next available id for a session
+        """
+        drinkers = get_drinkers()
+        if drinkers:
+            # convert keys to ints and return the max + 1
+            return max([int(k) for k in drinkers.keys()]) + 1
+        else:
+            return 1
+
     @staticmethod
-    def get_drinker_from_db(username: str) -> "Drinker":
+    def get_drinker_from_db(user_id: int) -> "Drinker":
         drinkers = get_drinkers()
 
-        if username not in drinkers:
+        if user_id not in drinkers:
             return None
 
-        d = drinkers[username]
+        d = drinkers[user_id]
         drinker = Drinker(
-            username=username,
+            id=user_id,
+            username=d["username"],
             password=d["password"],
             dob=d["dob"],
             sex=d["sex"],
@@ -139,7 +149,8 @@ class Drinker:
 
     def save_to_db(self):
         drinkers = get_drinkers()
-        drinkers[self.username] = {
+        drinkers[self.id] = {
+            "username": self.username,
             "password": self.password,
             # Convert datetime to isoformat string
             "dob": self.dob.isoformat(),
@@ -159,16 +170,14 @@ class Drinker:
 
 class Session:
     id: int
-    username: str # Foreign key
-    mode: int
+    user_id: int # Foreign key
     max_alcohol: float
     start_time: datetime
     drive_time: datetime
 
-    def __init__(self, username, mode, max_alcohol, start_time, drive_time, id=None):
+    def __init__(self, user_id, start_time, max_alcohol=None, drive_time=None, id=None):
         self.id = self._get_new_id() if id is None else id
-        self.username = username
-        self.mode = mode
+        self.user_id = user_id
         self.max_alcohol = max_alcohol
         self.start_time = start_time
         self.drive_time = drive_time
@@ -187,13 +196,12 @@ class Session:
     def save_to_db(self):
         sessions = get_all_sessions_from_db()
         session = {
-            "username": self.username,
-            "mode": self.mode,
+            "user_id": self.user_id,
             "max_alcohol": self.max_alcohol,
             "start_time": self.start_time.isoformat(),
             "drive_time": self.drive_time.isoformat(),
         }
-        sessions[self.id] = session
+        sessions[str(self.id)] = session
         try:
             with open("databases/sessions.json", "w") as outfile:
                 json.dump(sessions, outfile)
@@ -203,7 +211,7 @@ class Session:
         return sessions
 
     def __str__(self):
-        return f"Session: {self.id} - {self.username} - {self.mode} - {self.start_time} - {self.max_alcohol} - {self.drive_time}"
+        return f"Session: {self.id} - {self.username} - {self.start_time} - {self.max_alcohol} - {self.drive_time}"
 
 @dataclasses.dataclass
 class Drink:
