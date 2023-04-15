@@ -7,7 +7,8 @@ from datetime import timedelta
 from io import BytesIO
 
 import qrcode
-from flask import Flask, make_response
+from flask import Flask
+from flask import make_response
 from flask import redirect
 from flask import render_template
 from flask import request
@@ -30,7 +31,9 @@ logging.basicConfig(
 )
 
 # Choose the measurement method for the BAC sensor
-bac_measurement_method = "potentiometer" # "potentiometer" or "manual" or "alcohol_sensor"
+bac_measurement_method = (
+    "potentiometer"  # "potentiometer" or "manual" or "alcohol_sensor"
+)
 
 app = Flask(__name__)
 
@@ -43,14 +46,15 @@ with open("databases/users.json", "r") as f:
 def welcome_page():
     return render_template("welcome_page.html")
 
-@app.route('/qr_code')
+
+@app.route("/qr_code")
 def qr_code():
     """
     Returns a QR code image that contains the server URL.
     """
-    server_url = 'http://' + socket.gethostbyname(socket.gethostname()) + ':5000'
-    logging.info('QR code page accessed')
-    server_url = 'http://192.168.1.125:5000'  # Replace with your server URL
+    server_url = "http://" + socket.gethostbyname(socket.gethostname()) + ":5000"
+    logging.info("QR code page accessed")
+    server_url = "http://192.168.1.125:5000"  # Replace with your server URL
     qr = qrcode.QRCode(version=1, box_size=10, border=5)
     qr.add_data(server_url)
     qr.make(fit=True)
@@ -59,16 +63,17 @@ def qr_code():
 
     # Convert the image to a byte buffer. Flask can only accept byte or string http responses
     img_buffer = BytesIO()
-    img.save(img_buffer, 'PNG')
+    img.save(img_buffer, "PNG")
     # Move the pointer to the beginning of the buffer
     img_buffer.seek(0)
 
     # Create a Flask response object that contains the image
     response = make_response(img_buffer.getvalue())
     # Set the content type to image/png (the default is text/html)
-    response.headers['Content-Type'] = 'image/png'
+    response.headers["Content-Type"] = "image/png"
 
     return response
+
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -98,6 +103,7 @@ def register():
         return redirect("/login?username=" + username)
     # GET request
     return render_template("create_account.html")
+
 
 @app.route("/login", methods=["GET", "POST"])
 def account_login():
@@ -191,19 +197,29 @@ def measure_bac():
     elif bac_measurement_method == "manual":
         return render_template("input_bac_manually.html", user_id=user_id)
 
+
 @app.route("/get_bac_from_potentiometer", methods=["GET", "POST"])
 def get_bac_from_potentiometre():
     user_id = request.args.get("user_id", None)
-    logging.info("Get bac from potentiometer page accessed, method: {}, user: {}".format(request.method, user_id))
+    logging.info(
+        "Get bac from potentiometer page accessed, method: {}, user: {}".format(
+            request.method, user_id
+        )
+    )
     if request.method == "POST":
         current_bac = get_potentiometer_values()
-        return str(round(current_bac,3))
+        return str(round(current_bac, 3))
     # GET request
     return render_template("input_bac_with_potetiometer.html", user_id=user_id)
 
+
 @app.route("/<int:user_id>/recommendation/<current_bac>", methods=["GET"])
-def recommendation(user_id, current_bac = None):
-    logging.info("Recommendation page accessed, user: {}, method: {}, current_bac: {}".format(user_id, request.method, current_bac))
+def recommendation(user_id, current_bac=None):
+    logging.info(
+        "Recommendation page accessed, user: {}, method: {}, current_bac: {}".format(
+            user_id, request.method, current_bac
+        )
+    )
     current_bac = float(current_bac) if current_bac else None
     drinker = Drinker.get_drinker_from_db(user_id=user_id)
     current_session = drinker.get_current_session()
@@ -230,6 +246,5 @@ def recommendation(user_id, current_bac = None):
     return render_template("recommendation.html", recommendations=recommendations)
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)

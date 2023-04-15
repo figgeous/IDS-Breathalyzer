@@ -3,6 +3,7 @@ import time
 
 import serial
 
+
 def get_potentiometer_values() -> float:
     """
     Connects to the serial port and collects data for 5 seconds
@@ -22,7 +23,9 @@ def get_potentiometer_values() -> float:
     ser.close()
 
     maximum_possible_potentio_value = 4095
-    maximum_possible_bac = 0.3 # 0.3% BAC, which is close to comatosed
+    maximum_possible_bac = 0.3  # 0.3% BAC, which is close to comatosed
     maximum_measured = max(data)
-    conversion_to_bac = (maximum_possible_bac / maximum_possible_potentio_value) * maximum_measured
+    conversion_to_bac = (
+        maximum_possible_bac / maximum_possible_potentio_value
+    ) * maximum_measured
     return conversion_to_bac
