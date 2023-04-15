@@ -5,7 +5,7 @@
 <title>Measure BAC</title>
 </head>
 <body>
-<form action="/measure_bac" method="post">
+<form action="{{ url_for("recommendation", user_id=user_id) }}" method="post">
 <input type="hidden" id="user_id" name="user_id" value="{{ user_id }}" />
 <label for="current_bac">Blood Alcohol Content %:</label>
 <input type="text" name="current_bac" id="current_bac" required>

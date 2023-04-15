@@ -1,5 +1,6 @@
 import json
 import logging
+import random
 from datetime import datetime
 from datetime import timedelta
 
@@ -37,7 +38,7 @@ with open("databases/users.json", "r") as f:
 
 @app.route("/")
 def create_account():
-    return render_template("create_account.html")
+    return render_template("welcome_page.html")
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -149,67 +150,47 @@ def create_new_session():
     return render_template("create_new_session.html", user_id=user_id)
 
 
-@app.route("/measure_bac", methods=["GET", "POST"])
+@app.route("/measure_bac", methods=["GET"])
 def measure_bac():
-    # get arg from url
     user_id = request.args.get("user_id", None)
-    print("user_id: {}".format(user_id))
-
     logging.info("Measure_bac page accessed, user: {}".format(user_id))
+
+    if using_arduino:
+        pass
+        # current_bac = get_bac_from_arduino()
+    else:
+        return render_template("input_bac_manually.html", user_id=user_id)
+
+
+@app.route("/<int:user_id>/recommendation", methods=["GET", "POST"])
+def recommendation(user_id):
+    logging.info("Recommendation page accessed, user: {}, method: {}".format(user_id, request.method))
+
     if request.method == "POST":
-        user_id = int(request.form.get("user_id"))
-        print(request.form)
-        print("Post request user_id: {}".format(user_id))
-        if current_bac := request.form.get("current_bac"):
-            current_bac = float(current_bac)
-        else:
-            return "No current BAC found in POST request"
-        current_bac = float(request.form.get("current_bac"))
-        logging.info(f"Post request with current_bac: {current_bac}")
-
         drinker = Drinker.get_drinker_from_db(user_id=user_id)
-
+        current_bac = float(request.form.get("current_bac"))
         current_session = drinker.get_current_session()
 
         if current_session.drive_time:
+            # Get drink recommendations based on drive time. The drinker's max alcohol is taken into account.
             recommendations = get_drink_candidates_for_drive_time(
                 drinker=drinker, current_bac=current_bac
             )
         else:
+            # Get drink recommendations based on a user's max alcohol preference (not drive time)
             recommendations = get_drink_candidates_less_than_max_alcohol(
                 drinker=drinker, current_bac=current_bac
             )
 
+        # Randomize the order of the recommendations
+        random.shuffle(recommendations)
+
+        # Limit the number of recommendations
         number_of_recommendations = 3
         if len(recommendations) > number_of_recommendations:
             recommendations = recommendations[:number_of_recommendations]
 
         return render_template("recommendation.html", recommendations=recommendations)
-    return render_template("input_bac_manually.html", user_id=user_id)
-
-
-@app.route("/<int:user_id>/recommendation", methods=["GET", "POST"])
-def recommendation(user_id):
-    logging.info("Recommendation page accessed, user: {}".format(user_id))
-    # logging.info("Recommendation page accessed for user {} with {} request".format(request.form['username'], request.method))
-
-    if request.method == "POST":
-        drinker = Drinker.get_drinker_from_db(user_id=request.form["user_id"])
-        current_bac = float(request.form["current_bac"])
-        max_alcohol = float(request.form["max_alcohol"])
-        logging.info(
-            "Drinker: {}, current BAC: {}, max alcohol: {}".format(
-                drinker, current_bac, max_alcohol
-            )
-        )
-
-        # recommendations = get_drink_recommendations(
-        #     current_bac=current_bac,
-        #     drinker=drinker,)
-        recommendations = []
-        context = {"recommendations": recommendations}
-        logging.info("Recommendations: {}".format(recommendations))
-        return render_template("recommendation.html", **context)
 
     # GET request
     return redirect(url_for("account_login"))
