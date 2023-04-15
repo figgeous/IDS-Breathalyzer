@@ -1,10 +1,13 @@
 import json
 import logging
 import random
+import socket
 from datetime import datetime
 from datetime import timedelta
+from io import BytesIO
 
-from flask import Flask
+import qrcode
+from flask import Flask, make_response
 from flask import redirect
 from flask import render_template
 from flask import request
@@ -37,36 +40,62 @@ with open("databases/users.json", "r") as f:
 
 
 @app.route("/")
-def create_account():
+def welcome_page():
     return render_template("welcome_page.html")
 
+@app.route('/qr_code')
+def qr_code():
+    #get ip address of server
+    server_url = 'http://' + socket.gethostbyname(socket.gethostname()) + ':5000'
+    logging.info('QR code page accessed')
+    server_url = 'http://192.168.1.125:5000'  # Replace with your server URL
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(server_url)
+    qr.make(fit=True)
+    # Create an image in PIL.Image.Image format
+    img = qr.make_image(fill_color="black", back_color="white")
+
+    # Convert the image to a byte buffer. Flask can only accept byte or string http responses
+    img_buffer = BytesIO()
+    img.save(img_buffer, 'PNG')
+    # Move the pointer to the beginning of the buffer
+    img_buffer.seek(0)
+
+    # Create a Flask response object that contains the image
+    response = make_response(img_buffer.getvalue())
+    # Set the content type to image/png (the default is text/html)
+    response.headers['Content-Type'] = 'image/png'
+
+    return response
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    # Retrieve form data
-    username = request.form.get("username").strip()
-    password = request.form.get("password").strip()
+    if request.method == "POST":
+        # Retrieve form data
+        username = request.form.get("username").strip()
+        password = request.form.get("password").strip()
 
-    # Validate form data
-    if not username or not password:
-        return "Username and password are required!"
+        # Validate form data
+        if not username or not password:
+            return "Username and password are required!"
 
-    # Check if username already exists
-    if Drinker.get_drinker_from_db(username=username):
-        return f"Username {username} already exists!"
+        # Check if username already exists
+        if Drinker.get_drinker_from_db(username=username):
+            return f"Username {username} already exists!"
 
-    new_drinker = Drinker(
-        username=username,
-        password=password,
-        dob=datetime.strptime(request.form.get("dob"), "%Y-%m-%d"),
-        sex=request.form.get("sex").strip(),
-        weight=int(request.form.get("weight")),
-    )
-    new_drinker.save_to_db()
+        new_drinker = Drinker(
+            username=username,
+            password=password,
+            dob=datetime.strptime(request.form.get("dob"), "%Y-%m-%d"),
+            sex=request.form.get("sex").strip(),
+            weight=int(request.form.get("weight")),
+        )
+        new_drinker.save_to_db()
 
-    # Redirect to login page with username
-    return redirect("/login?username=" + username)
-
+        # Redirect to login page with username
+        return redirect("/login?username=" + username)
+    # GET request
+    return render_template("create_account.html")
 
 @app.route("/login", methods=["GET", "POST"])
 def account_login():
@@ -196,5 +225,5 @@ def recommendation(user_id):
     return redirect(url_for("account_login"))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)
