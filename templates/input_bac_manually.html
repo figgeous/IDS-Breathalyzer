@@ -5,30 +5,13 @@
 <title>BAC Buddy: Measure BAC</title>
 </head>
 <body>
-<form id="bac_form">
+<form id="bac_form" action="/measure_bac_manually" method="post">
+<input type="hidden" id="user_id" name="user_id" value="{{ user_id }}" />
 <label for="current_bac">Blood Alcohol Content %:</label>
 <input type="text" name="current_bac" id="current_bac" required>
-<input type="button" id="submit_button" value="Submit">
+<input type="submit" value="Submit">
 </form>
 <br>
     <a href="{{ url_for('account_login') }}">Log out</a>
 </body>
 </html>
-<script>
-  $(document).ready(function() {
-    $("#submit_button").click(function() {
-      var current_bac = $("#current_bac").val();
-      var url = "/{{ user_id }}/recommendations/" + current_bac;
-      $.ajax({
-        type: "GET",
-        url: url,
-        success: function(data) {
-          console.log(data);
-        },
-        error: function() {
-          console.log("An error occurred.");
-        }
-      });
-    });
-  });
-</script>

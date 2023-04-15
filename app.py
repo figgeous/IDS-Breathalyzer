@@ -193,7 +193,29 @@ def measure_bac():
     if bac_measurement_method == "potentiometer":
         return redirect(url_for("get_bac_from_potentiometre", user_id=user_id))
     elif bac_measurement_method == "manual":
-        return render_template("input_bac_manually.html", user_id=user_id)
+        return redirect(url_for("measure_bac_manually", user_id=user_id))
+
+
+@app.route("/measure_bac_manually", methods=["GET", "POST"])
+def measure_bac_manually():
+    user_id = request.args.get("user_id", None)
+    logging.info(
+        "Measure_bac_manually page accessed, method: {}, user: {}".format(
+            request.method, user_id
+        )
+    )
+    if request.method == "POST":
+        current_bac = request.form.get("current_bac")
+        user_id = request.form.get("user_id")
+        logging.info("Current bac: {}".format(current_bac))
+        return redirect(
+            url_for(
+                "recommendation", user_id=str(user_id), current_bac=str(current_bac)
+            )
+        )
+
+    # GET request
+    return render_template("input_bac_manually.html", user_id=user_id)
 
 
 @app.route("/get_bac_from_potentiometer", methods=["GET", "POST"])
