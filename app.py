@@ -31,9 +31,7 @@ logging.basicConfig(
 )
 
 # Choose the measurement method for the BAC sensor
-bac_measurement_method = (
-    "potentiometer"  # "potentiometer" or "manual" or "alcohol_sensor"
-)
+bac_measurement_method = "manual"  # "potentiometer" or "manual" or "alcohol_sensor"
 
 app = Flask(__name__)
 
