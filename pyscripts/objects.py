@@ -87,12 +87,12 @@ def get_drink_candidates_less_than_max_alcohol(
     current_session = drinker.get_current_session()
     assert current_session, "No current session"
 
-    current_bac = 0.01
     all_drinks = get_all_drinks_from_db()
 
     # Get drinks that are less than the max alcohol for the current session
     candidate_drinks = []
     for drink in all_drinks:
+        # print(drink.name, drinker.bac_after_drink(drink=drink, current_bac=current_bac))
         if (
             drinker.bac_after_drink(drink=drink, current_bac=current_bac)
             < current_session.max_alcohol
@@ -222,7 +222,7 @@ class Drinker:
         Returns the increase in BAC for a drink, taking current BAC into account
         """
         standard_drinks = (
-            30 / drink.alcohol_content
+            drink.alcohol_content / 30
         )  # 30ml of alcohol in a standard drink
 
         if self.sex == "male":
@@ -290,10 +290,10 @@ class Session:
     start_time: datetime
     drive_time: datetime
     qualitative_to_bac: dict = {
-        "Tipsy": 0.03,
-        "Inbetween": 0.08,
-        "Drunk": 0.15,
-        "Blackout": 0.25,
+        "Tipsy": 0.05,
+        "Inbetween": 0.07,
+        "Drunk": 0.10,
+        "Really Drunk": 0.25,
     }
     bac_to_qualitative: dict
 

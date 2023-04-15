@@ -17,6 +17,7 @@ from pyscripts.objects import Drinker
 from pyscripts.objects import get_drink_candidates_for_drive_time
 from pyscripts.objects import get_drink_candidates_less_than_max_alcohol
 from pyscripts.objects import Session
+from pyscripts.pyserial import get_potentiometer_values
 
 # from pyscripts.bac_calculate import get_drink_recommendations
 
@@ -28,9 +29,8 @@ logging.basicConfig(
     level=logging.DEBUG,
 )
 
-# Set to True if using Arduino. This will allow the app to read data from the Arduino rather that the user inputting
-# data manually.
-using_arduino = False
+# Choose the measurement method for the BAC sensor
+bac_measurement_method = "potentiometer" # "potentiometer" or "manual" or "alcohol_sensor"
 
 app = Flask(__name__)
 
@@ -45,7 +45,9 @@ def welcome_page():
 
 @app.route('/qr_code')
 def qr_code():
-    #get ip address of server
+    """
+    Returns a QR code image that contains the server URL.
+    """
     server_url = 'http://' + socket.gethostbyname(socket.gethostname()) + ':5000'
     logging.info('QR code page accessed')
     server_url = 'http://192.168.1.125:5000'  # Replace with your server URL
@@ -184,45 +186,49 @@ def measure_bac():
     user_id = request.args.get("user_id", None)
     logging.info("Measure_bac page accessed, user: {}".format(user_id))
 
-    if using_arduino:
-        pass
-        # current_bac = get_bac_from_arduino()
-    else:
+    if bac_measurement_method == "potentiometer":
+        return redirect(url_for("get_bac_from_potentiometre", user_id=user_id))
+    elif bac_measurement_method == "manual":
         return render_template("input_bac_manually.html", user_id=user_id)
 
-
-@app.route("/<int:user_id>/recommendation", methods=["GET", "POST"])
-def recommendation(user_id):
-    logging.info("Recommendation page accessed, user: {}, method: {}".format(user_id, request.method))
-
+@app.route("/get_bac_from_potentiometer", methods=["GET", "POST"])
+def get_bac_from_potentiometre():
+    user_id = request.args.get("user_id", None)
+    logging.info("Get bac from potentiometer page accessed, method: {}, user: {}".format(request.method, user_id))
     if request.method == "POST":
-        drinker = Drinker.get_drinker_from_db(user_id=user_id)
-        current_bac = float(request.form.get("current_bac"))
-        current_session = drinker.get_current_session()
-
-        if current_session.drive_time:
-            # Get drink recommendations based on drive time. The drinker's max alcohol is taken into account.
-            recommendations = get_drink_candidates_for_drive_time(
-                drinker=drinker, current_bac=current_bac
-            )
-        else:
-            # Get drink recommendations based on a user's max alcohol preference (not drive time)
-            recommendations = get_drink_candidates_less_than_max_alcohol(
-                drinker=drinker, current_bac=current_bac
-            )
-
-        # Randomize the order of the recommendations
-        random.shuffle(recommendations)
-
-        # Limit the number of recommendations
-        number_of_recommendations = 3
-        if len(recommendations) > number_of_recommendations:
-            recommendations = recommendations[:number_of_recommendations]
-
-        return render_template("recommendation.html", recommendations=recommendations)
-
+        current_bac = get_potentiometer_values()
+        return str(round(current_bac,3))
     # GET request
-    return redirect(url_for("account_login"))
+    return render_template("input_bac_with_potetiometer.html", user_id=user_id)
+
+@app.route("/<int:user_id>/recommendation/<current_bac>", methods=["GET"])
+def recommendation(user_id, current_bac = None):
+    logging.info("Recommendation page accessed, user: {}, method: {}, current_bac: {}".format(user_id, request.method, current_bac))
+    current_bac = float(current_bac) if current_bac else None
+    drinker = Drinker.get_drinker_from_db(user_id=user_id)
+    current_session = drinker.get_current_session()
+
+    if current_session.drive_time:
+        # Get drink recommendations based on drive time. The drinker's max alcohol is taken into account.
+        recommendations = get_drink_candidates_for_drive_time(
+            drinker=drinker, current_bac=current_bac
+        )
+    else:
+        # Get drink recommendations based on a user's max alcohol preference (not drive time)
+        recommendations = get_drink_candidates_less_than_max_alcohol(
+            drinker=drinker, current_bac=current_bac
+        )
+
+    # Randomize the order of the recommendations
+    random.shuffle(recommendations)
+
+    # Limit the number of recommendations
+    number_of_recommendations = 3
+    if len(recommendations) > number_of_recommendations:
+        recommendations = recommendations[:number_of_recommendations]
+
+    return render_template("recommendation.html", recommendations=recommendations)
+
 
 
 if __name__ == '__main__':

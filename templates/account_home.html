@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Account</title>
+    <title>BAC Buddy: Account</title>
     <style>
 
 
@@ -68,18 +68,19 @@
     </style>
 </head>
 <body>
-    <h1>Welcome {{ drinker.username }}</h1>
+    <h1>Welcome {{ drinker.username }}!</h1>
+
     {% if current_session %}
-    <p>Your last session started at {{ current_session.start_time.strftime('%H:%M') }}
-    <br>
-    Your current drinking approach is: {{ current_session.get_qualitative_max_alcohol() }}</p>
-        {% if current_session.drive_time %}
-    Your current drive time is: {{ current_session.drive_time.strftime('%H:%M') }}
-    <br>
-        {% endif %}
-    <a href="{{ url_for('measure_bac', user_id=drinker.id) }}">Get drink recommendation</a>
+        <p>Your last drinking session started at {{ current_session.start_time.strftime('%H:%M') }}.
+        <br>
+        You indicated that you wanted to get {{ current_session.get_qualitative_max_alcohol() }}</p>
+            {% if current_session.drive_time %}
+                Your current drive time is {{ current_session.drive_time.strftime('%H:%M') }}
+                <br>
+            {% endif %}
+        <a href="{{ url_for('measure_bac', user_id=drinker.id) }}">Get drink recommendation.</a>
     {% else %}
-    <p>You have not started a session yet</p>
+        <p>You have not started a session yet. Start a session to get drink recommendations.</p>
     {% endif %}
 
 

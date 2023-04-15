@@ -3,3 +3,4 @@ Flask>=2.2.3
 pre-commit >= 3.2.0
 pyserial >= 3.5
 reorder-python-imports>=3.9.0
+qrcode>=7.3

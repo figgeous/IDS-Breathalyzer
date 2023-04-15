@@ -5,7 +5,7 @@
     <title>Start a new session</title>
     </head>
     <body>
-    <h1>Start a new session</h1>
+    <h1>BAC Buddy: Start a new session</h1>
 
     <label for="toggle-button">Are you driving?</label>
     <button id="toggle-button" onclick="toggleContents(driving=true)">Yes</button>
@@ -19,7 +19,7 @@
                 <option value="Tipsy">Tipsy</option>
                 <option value="Inbetween">Inbetween</option>
                 <option value="Drunk">Drunk</option>
-                <option value="Blackout">Blackout</option>
+                <option value="Really Drunk">Really Drunk</option>
             </select>
             <br>
       <input type="submit" value="Start session">
@@ -43,6 +43,10 @@
       <input type="submit" value="Start session">
     </form>
 </div>
+<br>
+    <a href="{{ url_for('account_login') }}">Log out</a>
+    </body>
+</html>
 
 <script>
    function toggleContents(driving) {
@@ -57,6 +61,3 @@
       }
    }
 </script>
-
-    </body>
-</html>
