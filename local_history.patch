@@ -1,0 +1,1560 @@
+Index: .idea/misc.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/misc.xml b/.idea/misc.xml
+new file mode 100644
+--- /dev/null	(date 1681606901815)
++++ b/.idea/misc.xml	(date 1681606901815)
+@@ -0,0 +1,4 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.9 (IDS-Breathalyzer)" project-jdk-type="Python SDK" />
++</project>
+\ No newline at end of file
+Index: .idea/shelf/Uncommitted_changes_before_Checkout_at_16-04-2023_02_59__Changes_.xml
+===================================================================
+diff --git a/.idea/shelf/Uncommitted_changes_before_Checkout_at_16-04-2023_02_59__Changes_.xml b/.idea/shelf/Uncommitted_changes_before_Checkout_at_16-04-2023_02_59__Changes_.xml
+deleted file mode 100644
+--- a/.idea/shelf/Uncommitted_changes_before_Checkout_at_16-04-2023_02_59__Changes_.xml	
++++ /dev/null	
+@@ -1,4 +0,0 @@
+-<changelist name="Uncommitted_changes_before_Checkout_at_16-04-2023_02_59_[Changes]" date="1681606788689" recycled="false" toDelete="true">
+-  <option name="PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_16-04-2023_02_59_[Changes]/shelved.patch" />
+-  <option name="DESCRIPTION" value="Uncommitted changes before Checkout at 16-04-2023 02:59 [Changes]" />
+-</changelist>
+\ No newline at end of file
+Index: .idea/shelf/Uncommitted_changes_before_Checkout_at_16-04-2023_02_59__Changes_1.xml
+===================================================================
+diff --git a/.idea/shelf/Uncommitted_changes_before_Checkout_at_16-04-2023_02_59__Changes_1.xml b/.idea/shelf/Uncommitted_changes_before_Checkout_at_16-04-2023_02_59__Changes_1.xml
+deleted file mode 100644
+--- a/.idea/shelf/Uncommitted_changes_before_Checkout_at_16-04-2023_02_59__Changes_1.xml	
++++ /dev/null	
+@@ -1,4 +0,0 @@
+-<changelist name="Uncommitted_changes_before_Checkout_at_16-04-2023_02_59_[Changes]1" date="1681606794808" recycled="true" deleted="true">
+-  <option name="PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_16-04-2023_02_59_[Changes]1/shelved.patch" />
+-  <option name="DESCRIPTION" value="Uncommitted changes before Checkout at 16-04-2023 02:59 [Changes]" />
+-</changelist>
+\ No newline at end of file
+Index: app.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app.py b/app.py
+--- a/app.py	
++++ b/app.py	(date 1681606901809)
+@@ -1,83 +1,270 @@
+-from flask import Flask, render_template, request, redirect, url_for
+ import json
+-import os
++import logging
++import random
++import socket
++from datetime import datetime
++from datetime import timedelta
++from io import BytesIO
++
++import qrcode
++from flask import Flask
++from flask import make_response
++from flask import redirect
++from flask import render_template
++from flask import request
++from flask import url_for
++
++from pyscripts.objects import Drinker
++from pyscripts.objects import get_drink_candidates_for_drive_time
++from pyscripts.objects import get_drink_candidates_less_than_max_alcohol
++from pyscripts.objects import Session
++from pyscripts.pyserial import get_potentiometer_values
++
++# from pyscripts.bac_calculate import get_drink_recommendations
++
++logging.basicConfig(
++    filename="app.log",
++    filemode="w",
++    format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s",
++    datefmt="%H:%M:%S",
++    level=logging.DEBUG,
++)
++
++# Choose the measurement method for the BAC sensor
++bac_measurement_method = "manual"  # "potentiometer" or "manual" or "alcohol_sensor"
+ 
+ app = Flask(__name__)
+ 
+ # Load user data from JSON file
+-with open('users.json', 'r') as f:
++with open("databases/users.json", "r") as f:
+     users = json.load(f)
+ 
+-@app.route('/')
+-def index():
+-    return render_template('create_account.html')
++
++@app.route("/")
++def welcome_page():
++    return render_template("welcome_page.html")
++
++
++@app.route("/qr_code")
++def qr_code():
++    """
++    Returns a QR code image that contains the server URL.
++    """
++    server_url = "http://" + socket.gethostbyname(socket.gethostname()) + ":5000"
++    logging.info("QR code page accessed")
++    server_url = "http://192.168.1.125:5000"  # Replace with your server URL
++    qr = qrcode.QRCode(version=1, box_size=10, border=5)
++    qr.add_data(server_url)
++    qr.make(fit=True)
++    # Create an image in PIL.Image.Image format
++    img = qr.make_image(fill_color="black", back_color="white")
+ 
+-@app.route('/register', methods=['POST'])
++    # Convert the image to a byte buffer. Flask can only accept byte or string http responses
++    img_buffer = BytesIO()
++    img.save(img_buffer, "PNG")
++    # Move the pointer to the beginning of the buffer
++    img_buffer.seek(0)
++
++    # Create a Flask response object that contains the image
++    response = make_response(img_buffer.getvalue())
++    # Set the content type to image/png (the default is text/html)
++    response.headers["Content-Type"] = "image/png"
++
++    return response
++
++
++@app.route("/register", methods=["GET", "POST"])
+ def register():
+-    # Load existing user data or create a new file if not exists
+-    if not os.path.exists('users.json'):
+-        with open('users.json', 'w') as f:
+-            f.write('[]')
+-
+-    # Retrieve form data
+-    username = request.form.get('username')
+-    password = request.form.get('password')
+-    dob = request.form.get('dob')
+-    height = request.form.get('height')
+-    weight = request.form.get('weight')
+-    sex = request.form.get('sex')
+-    mode = request.form.get('mode')
+-    start_timer = request.form.get('start_timer')
++    if request.method == "POST":
++        # Retrieve form data
++        username = request.form.get("username").strip()
++        password = request.form.get("password").strip()
+ 
+-    # Validate form data
+-    if not username or not password:
+-        return 'Username and password are required!'
+-
+-    # Load existing user data
+-    with open('users.json', 'r') as f:
+-        data = json.load(f)
++        # Validate form data
++        if not username or not password:
++            return "Username and password are required!"
+ 
+-    # Check if username already exists
+-    if any(user['username'] == username for user in data):
+-        return 'Username already exists!'
++        # Check if username already exists
++        if Drinker.get_drinker_from_db(username=username):
++            return f"Username {username} already exists!"
+ 
+-    # Add new user to data
+-    new_user = {'username': username, 'password': password, 'dob': dob, 'height': height, 'weight': weight, 'sex': sex, 'mode': mode, 'start_timer': start_timer}
+-    data.append(new_user)
+-
+-    # Save updated user data to JSON file
+-    with open('users.json', 'w') as f:
+-        json.dump(data, f)
++        new_drinker = Drinker(
++            username=username,
++            password=password,
++            dob=datetime.strptime(request.form.get("dob"), "%Y-%m-%d"),
++            sex=request.form.get("sex").strip(),
++            weight=int(request.form.get("weight")),
++        )
++        new_drinker.save_to_db()
+ 
+-    # Redirect to login page with username
+-    return redirect('/login?username=' + username)
++        # Redirect to login page with username
++        return redirect("/login?username=" + username)
++    # GET request
++    return render_template("create_account.html")
+ 
+ 
+-@app.route('/login', methods=['GET', 'POST'])
++@app.route("/login", methods=["GET", "POST"])
+ def account_login():
+-    if request.method == 'POST':
++    logging.info("Login page accessed with method: {}".format(request.method))
++
++    # Check if the request method is POST
++    if request.method == "POST":
+         # Get form data
+-        username = request.form['username']
+-        password = request.form['password']
++        username = request.form["username"]
++        password = request.form["password"]
++
++        logging.info(f"Username: {username}, Password: {password}")
+ 
+         # Validate username and password against JSON data
+-        for user in users:
+-            if user['username'] == username and user['password'] == password:
+-                # Redirect to account.html upon successful login
+-                return redirect(url_for('account_home'))
+-        # Show error message for invalid login
+-        return "Invalid username or password"
++        drinker = Drinker.get_drinker_from_db(username=username)
++        if drinker and drinker.password == password:
++            logging.info("Valid username and password")
++            return redirect(url_for("account_home", user_id=drinker.id))
++        elif drinker and drinker.password != password:
++            logging.info("Invalid username and/or password")
++            return "Invalid password"
++
++    # Render the login page
++    return render_template("login_page.html")
++
++
++@app.route("/account/<int:user_id>", methods=["GET"])
++def account_home(user_id):
++    logging.info(f"Account page accessed for {user_id}")
++
++    drinker = Drinker.get_drinker_from_db(user_id=user_id)
++
++    current_session = drinker.get_current_session()
++    logging.info(f"Drinker: {drinker.username}, current session: {current_session}")
++
++    context = {
++        "drinker": drinker,
++        "current_session": current_session,
++    }
++    return render_template("account_home.html", **context)
++
++
++@app.route("/create_new_session", methods=["GET", "POST"])
++def create_new_session():
++    """
++    Starts a new session for the given user
++    """
++    # get arg from url
++    user_id = request.args.get("user_id", None)
++
++    logging.info(
++        "Create new session page accessed, user: {} and method: {}".format(
++            user_id, request.method
++        )
++    )
++    if request.method == "POST":
++        user_id = request.form.get("user_id")
++        assert user_id, "User id not found in POST request"
++
++        drive_time = request.form.get("drive_time", None)
++        if drive_time:
++            drive_time = datetime.strptime(request.form.get("drive_time"), "%H:%M")
++            drive_time = datetime.combine(datetime.today(), drive_time.time())
++            # Account for when drive time is in early hours of the morning
++            if drive_time < datetime.now():
++                drive_time += timedelta(days=1)
++
++        max_alcohol = Session.qualitative_to_bac[request.form.get("max_alcohol")]
++        new_session = Session(
++            user_id=user_id,
++            max_alcohol=max_alcohol,
++            start_time=datetime.now(),
++            drive_time=drive_time,
++        )
++        new_session.save_to_db()
++        logging.info("New session created for user: {}".format(user_id))
++        return redirect(url_for("account_home", user_id=user_id))
++
++    # GET request
++    logging.info("GET request for create new session page")
++    return render_template("create_new_session.html", user_id=user_id)
++
++
++@app.route("/measure_bac", methods=["GET"])
++def measure_bac():
++    user_id = request.args.get("user_id", None)
++    logging.info("Measure_bac page accessed, user: {}".format(user_id))
++
++    if bac_measurement_method == "potentiometer":
++        return redirect(url_for("get_bac_from_potentiometre", user_id=user_id))
++    elif bac_measurement_method == "manual":
++        return redirect(url_for("measure_bac_manually", user_id=user_id))
++
++
++@app.route("/measure_bac_manually", methods=["GET", "POST"])
++def measure_bac_manually():
++    user_id = request.args.get("user_id", None)
++    logging.info(
++        "Measure_bac_manually page accessed, method: {}, user: {}".format(
++            request.method, user_id
++        )
++    )
++    if request.method == "POST":
++        current_bac = request.form.get("current_bac")
++        user_id = request.form.get("user_id")
++        logging.info("Current bac: {}".format(current_bac))
++        return redirect(
++            url_for(
++                "recommendation", user_id=str(user_id), current_bac=str(current_bac)
++            )
++        )
++
++    # GET request
++    return render_template("input_bac_manually.html", user_id=user_id)
++
++
++@app.route("/get_bac_from_potentiometer", methods=["GET", "POST"])
++def get_bac_from_potentiometre():
++    user_id = request.args.get("user_id", None)
++    logging.info(
++        "Get bac from potentiometer page accessed, method: {}, user: {}".format(
++            request.method, user_id
++        )
++    )
++    if request.method == "POST":
++        current_bac = get_potentiometer_values()
++        return str(round(current_bac, 3))
++    # GET request
++    return render_template("input_bac_with_potetiometer.html", user_id=user_id)
++
++
++@app.route("/<int:user_id>/recommendation/<current_bac>", methods=["GET"])
++def recommendation(user_id, current_bac=None):
++    logging.info(
++        "Recommendation page accessed, user: {}, method: {}, current_bac: {}".format(
++            user_id, request.method, current_bac
++        )
++    )
++    current_bac = float(current_bac) if current_bac else None
++    drinker = Drinker.get_drinker_from_db(user_id=user_id)
++    current_session = drinker.get_current_session()
++
++    if current_session.drive_time:
++        # Get drink recommendations based on drive time. The drinker's max alcohol is taken into account.
++        recommendations = get_drink_candidates_for_drive_time(
++            drinker=drinker, current_bac=current_bac
++        )
+     else:
+-        # Render the login form for GET request
+-        return render_template('account_login.html')
++        # Get drink recommendations based on a user's max alcohol preference (not drive time)
++        recommendations = get_drink_candidates_less_than_max_alcohol(
++            drinker=drinker, current_bac=current_bac
++        )
++
++    # Randomize the order of the recommendations
++    random.shuffle(recommendations)
+ 
+-@app.route('/account/home')
+-def account_home():
+-    # Get the username from the URL parameter
+-    username = request.args.get('username')
++    # Limit the number of recommendations
++    number_of_recommendations = 3
++    if len(recommendations) > number_of_recommendations:
++        recommendations = recommendations[:number_of_recommendations]
+ 
+-    # Render the account.html template with username as parameter
+-    return render_template('account.html', username=username)
++    return render_template("recommendation.html", recommendations=recommendations)
+ 
+-if __name__ == '__main__':
+-    app.run(debug=True)
+\ No newline at end of file
++
++if __name__ == "__main__":
++    app.run(debug=True)
+Index: databases/users.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/databases/users.json b/databases/users.json
+new file mode 100644
+--- /dev/null	(date 1681606901804)
++++ b/databases/users.json	(date 1681606901804)
+@@ -0,0 +1,1 @@
++{"1": {"username": "qwfp", "password": "qwfp", "dob": "2023-04-05T00:00:00", "sex": "male", "weight": "43"}, "2": {"username": "arst", "password": "arst", "dob": "2023-04-19T00:00:00", "sex": "female", "weight": "88"}, "3": {"username": "xcdv", "password": "xcdv", "dob": "2023-04-13T00:00:00", "sex": "male", "weight": "45"}, "4": {"username": "678", "password": "678", "dob": "2023-04-12T00:00:00", "sex": "female", "weight": "78"}, "5": {"username": "ggm", "password": "mmg", "dob": "2023-04-13T00:00:00", "sex": "male", "weight": "56"}, "6": {"username": "mmg", "password": "mmg", "dob": "2023-04-06T00:00:00", "sex": "male", "weight": "78"}, "7": {"username": "Rickie", "password": "12345", "dob": "1999-08-09T00:00:00", "sex": "male", "weight": "80"}}
+\ No newline at end of file
+Index: databases/sessions.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/databases/sessions.json b/databases/sessions.json
+new file mode 100644
+--- /dev/null	(date 1681606901802)
++++ b/databases/sessions.json	(date 1681606901802)
+@@ -0,0 +1,1 @@
++{"1": {"user_id": "1", "max_alcohol": 0.1, "start_time": "2023-04-15T13:25:06.176746", "drive_time": null}, "2": {"user_id": "1", "max_alcohol": 0.25, "start_time": "2023-04-15T14:30:34.598723", "drive_time": "2023-04-15T16:31:00"}, "3": {"user_id": "7", "max_alcohol": 0.05, "start_time": "2023-04-16T02:54:05.441810", "drive_time": null}, "4": {"user_id": "7", "max_alcohol": 0.25, "start_time": "2023-04-16T02:54:48.361960", "drive_time": null}}
+\ No newline at end of file
+Index: pyscripts/objects.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/pyscripts/objects.py b/pyscripts/objects.py
+new file mode 100644
+--- /dev/null	(date 1681606901793)
++++ b/pyscripts/objects.py	(date 1681606901793)
+@@ -0,0 +1,368 @@
++import dataclasses
++import json
++import logging
++import math
++from datetime import datetime
++from datetime import timedelta
++
++
++def get_all_drinkers() -> dict[str, dict]:
++    try:
++        with open("databases/users.json", "r") as infile:
++            drinkers = json.load(infile)
++    except Exception:
++        print("Unable to load database file")
++    return drinkers
++
++
++def get_all_drinks_from_db() -> list["Drink"]:
++    try:
++        with open("databases/beverages.json", "r") as infile:
++            beverages_from_db = json.load(infile)
++    except Exception as e:
++        print("Unable to load database file", e)
++
++    beverages_list = []
++    for _, beverage in beverages_from_db.items():
++        beverages = Drink(
++            name=beverage["name"],
++            type=beverage["type"],
++            alcohol_content=float(beverage["alcohol_content"]),
++            ingredients=beverage["ingredients"],
++            image_path=beverage["image_path"],
++        )
++        beverages_list.append(beverages)
++    return beverages_list
++
++
++# def get_session_object_from_db(id:int) -> "Session":
++#     sessions_from_db = get_all_sessions_from_db()
++#     session_dict = sessions_from_db.get(str(id), None)
++#     if session_dict:
++#         return Session(
++#             id=id,
++#             user_id=int(session_dict["user_id"]),
++#             max_alcohol=float(session_dict["max_alcohol"]),
++#             start_time=datetime.fromisoformat(session_dict["start_time"]),
++#             drive_time=datetime.fromisoformat(session_dict["drive_time"]),
++#         )
++#     else:
++#         return None
++
++
++def get_all_sessions_from_db() -> dict[str, dict]:
++    try:
++        with open("databases/sessions.json", "r") as infile:
++            sessions_from_db = json.load(infile)
++    except Exception as e:
++        logging.error("Unable to load database file", e)
++    return sessions_from_db
++
++
++def get_all_session_objects_from_db() -> list["Session"]:
++    sessions_from_db = get_all_sessions_from_db()
++    sessions = []
++    for session_id, session_from_db in sessions_from_db.items():
++        if drivetime := session_from_db["drive_time"]:
++            drivetime = datetime.fromisoformat(drivetime)
++        else:
++            drivetime = None
++        session = Session(
++            id=int(session_id),
++            user_id=int(session_from_db["user_id"]),
++            max_alcohol=float(session_from_db["max_alcohol"]),
++            start_time=datetime.fromisoformat(session_from_db["start_time"]),
++            drive_time=drivetime,
++        )
++        sessions.append(session)
++    return sessions
++
++
++def get_drink_candidates_less_than_max_alcohol(
++    drinker: "Drinker", current_bac: float
++) -> list:
++    """
++    Returns a list of drinks that are less than the max alcohol for the current session. The list isn't sorted.
++    """
++    current_session = drinker.get_current_session()
++    assert current_session, "No current session"
++
++    all_drinks = get_all_drinks_from_db()
++
++    # Get drinks that are less than the max alcohol for the current session
++    candidate_drinks = []
++    for drink in all_drinks:
++        # print(drink.name, drinker.bac_after_drink(drink=drink, current_bac=current_bac))
++        if (
++            drinker.bac_after_drink(drink=drink, current_bac=current_bac)
++            < current_session.max_alcohol
++        ):
++            candidate_drinks.append(drink)
++    return candidate_drinks
++
++
++def get_drink_candidates_for_drive_time(drinker: "Drinker", current_bac: float) -> list:
++    """
++    Returns a list of drinks that are less than the max alcohol for the current session and that will allow the user to
++    drive by the drive time of the current session. The list is sorted by alcohol content, highest to lowest. The list
++    isn't sorted.
++    """
++    current_session = drinker.get_current_session()
++    drinks_candidates_less_that_max_alcohol = (
++        get_drink_candidates_less_than_max_alcohol(
++            drinker=drinker, current_bac=current_bac
++        )
++    )
++    candidate_drinks = []
++    for drink in drinks_candidates_less_that_max_alcohol:
++        bac_after_drink = drinker.bac_after_drink(drink=drink, current_bac=current_bac)
++        number_of_seconds_until_can_drive = drinker.number_seconds_until_can_drive(
++            current_bac=bac_after_drink
++        )
++        if (
++            number_of_seconds_until_can_drive
++            > current_session.seconds_until_drive_time()
++        ):
++            candidate_drinks.append(drink)
++    return candidate_drinks
++
++
++class Drinker:
++    id: int
++    username: str
++    dob: datetime
++    sex: str
++    weight: int
++
++    def __init__(self, username, password, dob, sex, weight, id=None):
++        self.id = self._get_new_id() if id is None else id
++        self.username = username
++        self.password = password
++        self.dob = dob
++        self.sex = sex.lower()
++        self.weight = weight
++
++    def _get_new_id(self) -> int:
++        """
++        Returns the next available id for a drinker
++        """
++        drinkers = get_all_drinkers()
++        if drinkers:
++            # convert keys to ints and return the max + 1
++            return max([int(k) for k in drinkers.keys()]) + 1
++        else:
++            return 1
++
++    @staticmethod
++    def get_drinker_from_db(
++        username: str = None, user_id: int = None
++    ) -> "Drinker" or None:
++        """
++        Returns a Drinker object if the user exists in the database, otherwise returns None
++        """
++        assert username or user_id, "Must provide either username or user_id"
++        all_drinkers = get_all_drinkers()
++
++        selected_id, selected_drinker = None, None
++        for id, drinker in all_drinkers.items():
++            if (user_id and user_id == int(id)) or (
++                username and drinker["username"] == username
++            ):
++                selected_id, selected_drinker = int(id), drinker
++                break
++
++        # If no drinker was found, return None
++        if not selected_drinker:
++            return None
++
++        assert selected_id
++
++        drinker = Drinker(
++            id=int(selected_id),
++            username=selected_drinker["username"],
++            password=selected_drinker["password"],
++            dob=selected_drinker["dob"],
++            sex=selected_drinker["sex"],
++            weight=int(selected_drinker["weight"]),
++        )
++        return drinker
++
++    def get_most_recent_session(self) -> "Session" or None:
++        sessions_from_db = get_all_session_objects_from_db()
++        # Get session for user with most recent start time
++        most_recent_session = None
++        for session in sessions_from_db:
++            if session.user_id != self.id:
++                continue
++            if most_recent_session is None:
++                most_recent_session = session
++            elif session.start_time > most_recent_session.start_time:
++                most_recent_session = session
++        return most_recent_session
++
++    def get_current_session(self) -> "Session" or None:
++        """
++        Returns the current session if it exists, otherwise returns None. The current session is defined as the most
++        recent session that is less than 24 hours old.
++        """
++        threshold = timedelta(hours=24)
++
++        if most_recent_session := self.get_most_recent_session():
++            time_diff = datetime.now() - most_recent_session.start_time
++            logging.info(
++                f"Most recent session: {most_recent_session}, time diff: {time_diff}"
++            )
++            if datetime.now() - most_recent_session.start_time < threshold:
++                return most_recent_session
++
++        return None
++
++    def bac_after_drink(self, drink: "Drink", current_bac: float) -> float:
++        """
++        Returns the increase in BAC for a drink, taking current BAC into account
++        """
++        standard_drinks = (
++            drink.alcohol_content / 30
++        )  # 30ml of alcohol in a standard drink
++
++        if self.sex == "male":
++            a, b = 0.0662, -0.014
++        else:  # Female
++            a, b = 0.1004, -0.016
++        bac_increase_per_drink = a * math.exp(b * self.weight)
++
++        return current_bac + (bac_increase_per_drink * standard_drinks)
++
++    def number_seconds_until_can_drive(self, current_bac: float) -> float:
++        """
++        Returns the number of seconds until the person can drive, or 0 if they can drive now
++        """
++        if current_bac <= 0.05:
++            return 0
++
++        # Calculate the BAC per drink for the person and the time it takes to metabolize one drink
++        if self.sex == "male":
++            a1, a2 = 0.0662, -0.014
++            b1, b2 = 3.9584, -0.013
++        else:  # female
++            a1, a2 = 0.1004, -0.016
++            b1, b2 = 5.1596, -0.014
++        # Amount BAC raises per 30 ml of pure alcohol
++        bac_increase_per_drink = a1 * math.exp(a2 * self.weight)
++        # Seconds to metabolize 30 ml alc. by weight
++        seconds_to_metabolize_one_drink = (b1 * math.exp(b2 * self.weight)) * 3600
++
++        # Calculate the current BAC and time to sober
++        drinks_metabolized_per_second = 1 / seconds_to_metabolize_one_drink
++        bac_metabolized_per_second = (
++            drinks_metabolized_per_second * bac_increase_per_drink
++        )
++        seconds_to_sober = (current_bac - 0.05) / bac_metabolized_per_second
++
++        return seconds_to_sober
++
++    def save_to_db(self):
++        drinkers = get_all_drinkers()
++        drinkers[str(self.id)] = {
++            "username": self.username,
++            "password": self.password,
++            # Convert datetime to isoformat string
++            "dob": self.dob.isoformat(),
++            "sex": self.sex,
++            "weight": str(self.weight),
++        }
++        try:
++            with open("databases/users.json", "w") as outfile:
++                json.dump(drinkers, outfile)
++                print("Saved to database")
++        except Exception:
++            print("Unable to load database file")
++        return drinkers
++
++    def __str__(self):
++        return f"Drinker: {self.username}"
++
++
++class Session:
++    id: int
++    user_id: int  # Foreign key
++    max_alcohol: float
++    start_time: datetime
++    drive_time: datetime
++    qualitative_to_bac: dict = {
++        "Tipsy": 0.05,
++        "Inbetween": 0.07,
++        "Drunk": 0.10,
++        "Really Drunk": 0.25,
++    }
++    bac_to_qualitative: dict
++
++    def __init__(self, user_id, start_time, max_alcohol=None, drive_time=None, id=None):
++        self.id = self._get_new_id() if id is None else id
++        self.user_id = user_id
++        self.max_alcohol = max_alcohol
++        self.start_time = start_time
++        self.drive_time = drive_time
++        self.bac_to_qualitative = {v: k for k, v in self.qualitative_to_bac.items()}
++
++    def get_qualitative_max_alcohol(self) -> float:
++        """
++        Returns the qualitative BAC for the session
++        """
++        return self.bac_to_qualitative[self.max_alcohol]
++
++    def _get_new_id(self):
++        """
++        Returns the next available id for a session
++        """
++        sessions = get_all_sessions_from_db()
++        if sessions:
++            # convert keys to ints and return the max + 1
++            return max([int(k) for k in sessions.keys()]) + 1
++        else:
++            return 1
++
++    def seconds_since_start_time(self) -> int:
++        time_diff = datetime.now() - self.start_time
++        return round(time_diff.total_seconds() / 60)
++
++    def seconds_until_drive_time(self) -> int or None:
++        if self.drive_time:
++            time_diff = self.drive_time - datetime.now()
++            return round(time_diff.total_seconds() / 3600)
++        else:
++            return
++
++    def save_to_db(self):
++        assert self.user_id, "User id must be set"
++        assert self.start_time, "Start time must be set"
++        assert self.max_alcohol, "Max alcohol must be set"
++
++        sessions = get_all_sessions_from_db()
++        drive_time = self.drive_time.isoformat() if self.drive_time else None
++        session = {
++            "user_id": self.user_id,
++            "max_alcohol": self.max_alcohol,
++            "start_time": self.start_time.isoformat(),
++            "drive_time": drive_time,
++        }
++        sessions[str(self.id)] = session
++        try:
++            with open("databases/sessions.json", "w") as outfile:
++                json.dump(sessions, outfile)
++                print("Saved to database")
++        except Exception:
++            print("Unable to load database file")
++        return sessions
++
++    def __str__(self):
++        return f"Session: {self.id} - {self.user_id} - {self.start_time} - {self.max_alcohol} - {self.drive_time}"
++
++
++@dataclasses.dataclass
++class Drink:
++    name: str
++    type: str
++    alcohol_content: float
++    ingredients: list
++    image_path: str
+Index: pyscripts/pyserial.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/pyscripts/pyserial.py b/pyscripts/pyserial.py
+new file mode 100644
+--- /dev/null	(date 1681606901799)
++++ b/pyscripts/pyserial.py	(date 1681606901799)
+@@ -0,0 +1,31 @@
++# Connection to Arduino and data collection
++import time
++
++import serial
++
++
++def get_potentiometer_values() -> float:
++    """
++    Connects to the serial port and collects data for 5 seconds
++    """
++    # Connect to serial port
++    serial_port_name = "COM7"
++    ser = serial.Serial(serial_port_name, 9600)
++    # time.sleep(2)
++    # Loop that runs for five seconds while data is collected. Decode and remove whitespace
++    data = []
++    for i in range(0, 50):
++        # Read data from serial port
++        data.append(float(ser.readline().decode().strip()))
++        # Wait for 0.1 seconds
++        time.sleep(0.1)
++    # Close serial port
++    ser.close()
++
++    maximum_possible_potentio_value = 4095
++    maximum_possible_bac = 0.3  # 0.3% BAC, which is close to comatosed
++    maximum_measured = max(data)
++    conversion_to_bac = (
++        maximum_possible_bac / maximum_possible_potentio_value
++    ) * maximum_measured
++    return conversion_to_bac
+Index: templates/login_page.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/templates/login_page.html b/templates/login_page.html
+new file mode 100644
+--- /dev/null	(date 1681606901706)
++++ b/templates/login_page.html	(date 1681606901706)
+@@ -0,0 +1,85 @@
++<!DOCTYPE html>
++<html>
++  <head>
++    <title>BAC Buddy: Login</title>
++    <style>
++      body {
++          background-image: url('https://bevspot.com/wp-content/uploads/2017/08/bevspot-bar-name-scaled.jpg');
++          background-size: cover;
++          font-family: Arial, sans-serif;
++          background-color: #f0f0f0;
++          margin: 0;
++          padding: 20px;
++      }
++      h1 {
++          color: whitesmoke;
++          font-family: nexa;
++          font-size: 75px;
++        text-align: center;
++        margin-bottom: 20px;
++      }
++      form {
++          max-width: 600px;
++          max-height: 350px ;
++          margin: 0 auto;
++          padding: 20px;
++          border-radius: 20px;
++          background: linear-gradient(135deg, #fa8352, #f5a584, #a8571d, #614839, #000000,#063e75, #186ec4);
++          box-shadow: 0px 10px 20px rgba(0, 1, 2, 3); /*container box shadow */
++
++      }
++      label {
++        display: block;
++        margin-bottom: 5px;
++        font-weight: bold;
++      }
++      input[type="text"],
++      input[type="password"] {
++        width: 95%;
++        padding: 10px;
++        margin-bottom: 10px;
++        border: 1px solid #ccc;
++        border-radius: 20px;
++        font-size: 16px;
++      }
++      input[type="submit"] {
++        width: 99%;
++        padding: 10px;
++        background-color: #007bff;
++        color: #fff;
++        border: none;
++        border-radius: 20px;
++        font-size: 16px;
++        cursor: pointer;
++      }
++      input[type="submit"]:hover {
++        background-color: #0056b3;
++      }
++      .register-link {
++        display: block;
++        margin-top: 20px;
++        text-align: center;
++        text-decoration: none;
++        color: #007bff;
++        font-weight: bold;
++      }
++    </style>
++  </head>
++  <body>
++    <h1>Login</h1>
++    <form action="/login" method="POST">
++
++      <label for="username">Username:</label>
++      <input type="text" name="username" id="username">
++
++      <label for="password">Password:</label>
++      <input type="password" name="password" id="password">
++
++      <input type="submit" value="Login">
++
++        <br>
++        <br>
++      <a href="/register" class="register-link">Create account</a>
++    </form>
++  </body>
++</html>
+Index: templates/account_home.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/templates/account_home.html b/templates/account_home.html
+new file mode 100644
+--- /dev/null	(date 1681606901703)
++++ b/templates/account_home.html	(date 1681606901703)
+@@ -0,0 +1,88 @@
++<!DOCTYPE html>
++<html>
++<head>
++    <title>BAC Buddy: Account</title>
++    <style>
++body {
++    background-image: url('https://visitpalmsprings.com/wp-content/uploads/2022/08/happy-hour-iStock-615833974-scaled.jpg');
++    background-size: cover;
++    font-family: Arial, sans-serif;
++    color: black;
++    font-size: 30px;
++    display: flex;
++    flex-direction: column;
++    align-items: center;
++    justify-content: center;
++    height: 100vh;
++}
++
++h1 {
++    text-align: center;
++    margin-top: 100px;
++    font-size: 48px;
++    color: black;
++}
++
++form {
++    text-align: center;
++    margin-top: 50px;
++}
++
++label {
++    display: block;
++    font-size: 18px;
++    margin-bottom: 10px;
++}
++
++input[type="text"] {
++    padding: 10px;
++    font-size: 18px;
++    border-radius: 5px;
++    border: none;
++    outline: none;
++    width: 300px;
++}
++
++.button {
++    padding: 10px 20px;
++    font-size: 18px;
++    border-radius: 20px;
++    border: none;
++    outline: none;
++    background-color: #007BFF;
++    color: #FFF;
++    cursor: pointer;
++    margin-top: 10px;
++    display: inline-block;
++    text-decoration: none;
++    transition: background-color 0.3s ease;
++}
++
++.button:hover {
++    background-color: #0056b3;
++}
++
++    </style>
++</head>
++<body>
++    <h1>Welcome {{ drinker.username }}!</h1>
++
++    {% if current_session %}
++        <p>Your last drinking session started at {{ current_session.start_time.strftime('%H:%M') }}.
++        <br>
++        You indicated that you wanted to get {{ current_session.get_qualitative_max_alcohol() }}</p>
++        {% if current_session.drive_time %}
++            Your current drive time is {{ current_session.drive_time.strftime('%H:%M') }}
++            <br>
++        {% endif %}
++        <a href="{{ url_for('measure_bac', user_id=drinker.id) }}" class="button">Get drink recommendation</a>
++    {% else %}
++        <p>You have not started a session yet. Start a session to get drink recommendations.</p>
++    {% endif %}
++
++    <br>
++    <a href="{{ url_for('create_new_session', user_id=drinker.id) }}" class="button">Start new session</a>
++    <br>
++    <a href="{{ url_for('account_login') }}" class="button">Log out</a>
++</body>
++</html>
+Index: templates/welcome_page.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/templates/welcome_page.html b/templates/welcome_page.html
+new file mode 100644
+--- /dev/null	(date 1681606901700)
++++ b/templates/welcome_page.html	(date 1681606901700)
+@@ -0,0 +1,91 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <title>BAC Buddy: Welcome!</title>
++    <style>
++        /* Body styles */
++        body {
++            background-image: url('https://www.tastingtable.com/img/gallery/the-most-important-labels-to-look-for-when-buying-beer/intro-1660670809.jpg');
++            background-size: cover;
++            font-family: Nexa, sans-serif;
++            color: whitesmoke;
++            font-size: 18px;
++            margin: 0;
++            padding: 0;
++        }
++
++        /* Container styles */
++        .container {
++            max-width: 800px;
++            margin: 0 auto;
++            padding: 100px 20px;
++            text-align: center;
++            border-radius: 10px;
++            background: linear-gradient(135deg, #000000, #614839, #f5a584, #fa8352);
++            box-shadow: 0px 10px 20px rgba(0, 1, 2, 3); /*container box shadow */
++        }
++
++        /* Logo styles */
++        img {
++            width: 200px;
++            height: 200px;
++            border-radius: 50%;
++            margin-bottom: 50px;
++        }
++
++        /* Heading styles */
++        h1 {
++            font-size: 36px;
++            margin-bottom: 50px;
++        }
++
++        /* Link styles */
++        .login-link {
++            display: inline-block;
++            padding: 10px 20px;
++            font-size: 18px;
++            border-radius: 20px;
++            background-color: #007BFF;
++            color: #FFF;
++            text-decoration: none;
++            transition: background-color 0.3s ease-in-out;
++        }
++
++        .login-link:hover {
++            background-color: #0056b3;
++        }
++
++        p {
++            margin-top: 50px;
++        }
++
++        /* Additional style for image credit link */
++        a {
++            color: #007BFF;
++            text-decoration: none;
++            transition: color 0.3s ease-in-out;
++        }
++
++        a:hover {
++            color: #0056b3;
++        }
++    </style>
++</head>
++<body>
++    <div class="container">
++        <h1>Welcome to BAC Buddy!</h1>
++        <div>
++            <img src="static/images/logo.png" alt="BAC Buddy Logo">
++        </div>
++        <p>Our app is designed to provide you with personalized drink recommendations based on your desired
++        level of intoxication and your planned driving time. With our app, you can make informed decisions about your drinking
++        and enjoy your evening responsibly. Our priority is your safety and well-being, so please use our app responsibly and
++        always remember to never drink and drive.</p>
++        <br>
++        <a href="{{ url_for("account_login") }}" class="login-link">Let's start!</a>
++        <br>
++        <p>image created with <a href="https://www.shopify.com/tools/logo-maker">free online tool</a></p>
++    </div>
++</body>
++</html>
+Index: templates/recommendation.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/templates/recommendation.html b/templates/recommendation.html
+new file mode 100644
+--- /dev/null	(date 1681606901709)
++++ b/templates/recommendation.html	(date 1681606901709)
+@@ -0,0 +1,27 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <title>BAC Buddy: Drink recommendations</title>
++</head>
++<body>
++{% if recommendations %}
++    {% for recommendation in recommendations %}
++    <h1>{{ recommendation.name }}</h1>
++    <h2>{{ recommendation.type }}</h2>
++    <h3>{{ recommendation.ingredients }}</h3>
++    <img src="{{ recommendation.image_path }}" alt="Images of a beverage">
++    {% endfor %}
++{% else %}
++    <h1>You can't drink any more alcohol just yet. Grab something non-alcoholic and try again soon!</h1>
++{% endif %}
++
++<p> Disclaimer: Please note that the drink recommendations provided are for informational purposes only and should be
++    used at the discretion and responsibility of the user. While efforts have been made to provide accurate and helpful
++    recommendations, individual preferences and circumstances may vary. It is important to make informed decisions and
++    drink responsibly. Please do not drive under the influence of alcohol.</p>
++
++<br>
++    <a href="{{ url_for('account_login') }}">Log out</a>
++</body>
++</html>
+Index: templates/create_new_session.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/templates/create_new_session.html b/templates/create_new_session.html
+new file mode 100644
+--- /dev/null	(date 1681606901718)
++++ b/templates/create_new_session.html	(date 1681606901718)
+@@ -0,0 +1,63 @@
++<!DOCTYPE html>
++<html>
++  <head>
++    <meta charset="utf-8">
++    <title>Start a new session</title>
++    </head>
++    <body>
++    <h1>BAC Buddy: Start a new session</h1>
++
++    <label for="toggle-button">Are you driving?</label>
++    <button id="toggle-button" onclick="toggleContents(driving=true)">Yes</button>
++    <button id="toggle-button" onclick="toggleContents(driving=false)">No</button>
++
++<div id="content1" style="display: none;">
++        <form action="/create_new_session" method="POST">
++            <input type="hidden" id="user_id" name="user_id" value="{{ user_id }}" />
++            <label for="max_alcohol">Choose your drinking goal. want to get...</label>
++            <select id="max_alcohol" name="max_alcohol">
++                <option value="Tipsy">Tipsy</option>
++                <option value="Inbetween">Inbetween</option>
++                <option value="Drunk">Drunk</option>
++                <option value="Really Drunk">Really Drunk</option>
++            </select>
++            <br>
++      <input type="submit" value="Start session">
++    </form>
++</div>
++
++<div id="content2" style="display: none;">
++        <form action="/create_new_session" method="POST">
++            <input type="hidden" id="user_id" name="user_id" value="{{ user_id }}" />
++            <label for="max_alcohol">Choose your drinking goal. want to get...</label>
++            <select id="max_alcohol" name="max_alcohol">
++                <option value="Tipsy">Tipsy</option>
++                <option value="Inbetween">Inbetween</option>
++                <option value="Drunk">Drunk</option>
++                <option value="Really Drunk">Really Drunk</option>
++            </select>
++            <br>
++            <label for="drive_time">Drive time:</label>
++            <input type="time" id="drive_time" name="drive_time">
++            <br>
++      <input type="submit" value="Start session">
++    </form>
++</div>
++<br>
++    <a href="{{ url_for('account_login') }}">Log out</a>
++    </body>
++</html>
++
++<script>
++   function toggleContents(driving) {
++      var content1 = document.getElementById("content1");
++      var content2 = document.getElementById("content2");
++      content1.style.display = "none";
++      content2.style.display = "none";
++      if (driving === true) {
++         content2.style.display = "block";
++      } else {
++         content1.style.display = "block";
++      }
++   }
++</script>
+Index: templates/input_bac_manually.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/templates/input_bac_manually.html b/templates/input_bac_manually.html
+new file mode 100644
+--- /dev/null	(date 1681606901714)
++++ b/templates/input_bac_manually.html	(date 1681606901714)
+@@ -0,0 +1,17 @@
++<!DOCTYPE html>
++<html>
++<head>
++<meta charset="utf-8">
++<title>BAC Buddy: Measure BAC</title>
++</head>
++<body>
++<form id="bac_form" action="/measure_bac_manually" method="post">
++<input type="hidden" id="user_id" name="user_id" value="{{ user_id }}" />
++<label for="current_bac">Blood Alcohol Content %:</label>
++<input type="text" name="current_bac" id="current_bac" required>
++<input type="submit" value="Submit">
++</form>
++<br>
++    <a href="{{ url_for('account_login') }}">Log out</a>
++</body>
++</html>
+Index: templates/input_bac_with_potetiometer.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/templates/input_bac_with_potetiometer.html b/templates/input_bac_with_potetiometer.html
+new file mode 100644
+--- /dev/null	(date 1681606901711)
++++ b/templates/input_bac_with_potetiometer.html	(date 1681606901711)
+@@ -0,0 +1,52 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <title>BAC Buddy: Measure BAC</title>
++    <style>
++        .spinner {
++        border: 4px solid rgba(0, 0, 0, 0.1);
++        border-top-color: #333;
++        border-radius: 50%;
++        width: 20px;
++        height: 20px;
++        animation: spin 1s ease-in-out infinite;
++        margin: 0 auto;
++    }
++
++    @keyframes spin {
++        to {
++            transform: rotate(360deg);
++        }
++    }
++    </style>
++</head>
++<body>
++    <h1>Measure BAC</h1>
++    <button id="button">Set value</button>
++    <div id="spinner-container" style="display: none;">
++        <p>Measuring BAC...</p>
++    <div class="spinner"></div>
++    </div>
++</body>
++</html>
++
++<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
++    <script>
++    $(document).ready(function(){
++        $("#spinner-container").hide();
++        $("#button").click(function(){
++            $('#spinner-container').fadeIn();
++            $.ajax({
++                type: 'POST',
++                url: '{{url_for("get_bac_from_potentiometre")}}',
++                success: function(response){
++                    window.location.href = "/{{ user_id }}/recommendation/" + response;
++                },
++                error: function(response){
++                    $("#spinner").hide();
++                    $("#response").html("An error occurred");
++                }
++            });
++        });
++    });
++</script>
+Index: templates/create_account.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/templates/create_account.html b/templates/create_account.html
+--- a/templates/create_account.html	
++++ b/templates/create_account.html	(date 1681606901719)
+@@ -1,7 +1,7 @@
+ <!DOCTYPE html>
+ <html>
+   <head>
+-    <title>Create Account</title>
++    <title>BAC Buddy:Create Account</title>
+     <style>
+       body {
+         font-family: Nexa, sans-serif;
+@@ -71,8 +71,6 @@
+       <input type="password" name="password" id="password">
+       <label for="dob">Date of Birth:</label>
+       <input type="date" name="dob" id="dob">
+-      <label for="height">Height:</label>
+-      <input type="number" name="height" id="height">
+       <label for="weight">Weight:</label>
+       <input type="number" name="weight" id="weight">
+       <label for="sex">Sex:</label>
+@@ -80,9 +78,8 @@
+         <option value="male">Male</option>
+         <option value="female">Female</option>
+       </select>
+-      <label for="mode">Mode:</label>
+-      <input type="number" name="mode" id="mode" min="1" max="3">
+-      <input type="submit" value="Create Account">
++      <input type="submit" value="Create user">
++      <br>
+       <a href="/login" class="login-link">Login</a>
+     </form>
+   </body>
+Index: templates/javascript/script.js
+===================================================================
+diff --git a/templates/javascript/script.js b/templates/javascript/script.js
+deleted file mode 100644
+--- a/templates/javascript/script.js	
++++ /dev/null	
+@@ -1,30 +0,0 @@
+-// Get the form and button elements
+-const form = document.querySelector('form');
+-const button = document.querySelector('#create-account');
+-
+-// Add an event listener to the button
+-button.addEventListener('click', (event) => {
+-  // Prevent the form from submitting
+-  event.preventDefault();
+-
+-  // Get the values from the form fields
+-  const username = form.username.value;
+-  const password = form.password.value;
+-  const dob = form.dob.value;
+-
+-  // Create the user dictionary
+-  const user = { username, password, dob };
+-
+-  // Send the user data to the server using AJAX
+-  const xhr = new XMLHttpRequest();
+-  xhr.open('POST', '/create_account');
+-  xhr.setRequestHeader('Content-Type', 'application/json');
+-  xhr.onload = function() {
+-    if (xhr.status === 200) {
+-      console.log('User data saved successfully!');
+-    } else {
+-      console.error('Error saving user data:', xhr.status);
+-    }
+-  };
+-  xhr.send(JSON.stringify(user));
+-});
+Index: requirements.txt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/requirements.txt b/requirements.txt
+--- a/requirements.txt	
++++ b/requirements.txt	(date 1681606901696)
+@@ -1,9 +1,6 @@
+ black>= 23.1.0
+-eel>=0.16.0
+-matplotlib>=3.4.2
+-numpy>=1.20.3
++Flask>=2.2.3
+ pre-commit >= 3.2.0
+ pyserial >= 3.5
++qrcode>=7.3
+ reorder-python-imports>=3.9.0
+-
+-Flask~=2.2.3
+\ No newline at end of file
+Index: javascript/script.js
+===================================================================
+diff --git a/javascript/script.js b/javascript/script.js
+deleted file mode 100644
+--- a/javascript/script.js	
++++ /dev/null	
+@@ -1,30 +0,0 @@
+-// Get the form and button elements
+-const form = document.querySelector('form');
+-const button = document.querySelector('#create-account');
+-
+-// Add an event listener to the button
+-button.addEventListener('click', (event) => {
+-  // Prevent the form from submitting
+-  event.preventDefault();
+-
+-  // Get the values from the form fields
+-  const username = form.username.value;
+-  const password = form.password.value;
+-  const dob = form.dob.value;
+-
+-  // Create the user dictionary
+-  const user = { username, password, dob };
+-
+-  // Send the user data to the server using AJAX
+-  const xhr = new XMLHttpRequest();
+-  xhr.open('POST', '/create_account');
+-  xhr.setRequestHeader('Content-Type', 'application/json');
+-  xhr.onload = function() {
+-    if (xhr.status === 200) {
+-      console.log('User data saved successfully!');
+-    } else {
+-      console.error('Error saving user data:', xhr.status);
+-    }
+-  };
+-  xhr.send(JSON.stringify(user));
+-});
+diff --git a/.idea/vcs.xml b/.idea/vcs.xml
+new file mode 100644
+diff --git a/.idea/other.xml b/.idea/other.xml
+new file mode 100644
+diff --git a/.idea/.gitignore b/.idea/.gitignore
+new file mode 100644
+diff --git a/.idea/modules.xml b/.idea/modules.xml
+new file mode 100644
+diff --git a/.idea/inspectionProfiles/profiles_settings.xml b/.idea/inspectionProfiles/profiles_settings.xml
+new file mode 100644
+diff --git a/.idea/IDS-Breathalyzer.iml b/.idea/IDS-Breathalyzer.iml
+new file mode 100644
+diff --git a/.idea/jsLibraryMappings.xml b/.idea/jsLibraryMappings.xml
+new file mode 100644
+diff --git a/.idea/shelf/Uncommitted_changes_before_Checkout_at_16-04-2023_02_59_[Changes]/shelved.patch b/.idea/shelf/Uncommitted_changes_before_Checkout_at_16-04-2023_02_59_[Changes]/shelved.patch
+deleted file mode 100644
+diff --git a/.idea/shelf/Uncommitted_changes_before_Checkout_at_16-04-2023_02_59_[Changes]1/shelved.patch b/.idea/shelf/Uncommitted_changes_before_Checkout_at_16-04-2023_02_59_[Changes]1/shelved.patch
+deleted file mode 100644
+diff --git a/databases/beverages.json b/databases/beverages.json
+new file mode 100644
+diff --git a/databases/drinkers.json b/databases/drinkers.json
+deleted file mode 100644
+diff --git a/pyscripts/__init__.py b/pyscripts/__init__.py
+new file mode 100644
+diff --git a/templates/css/styles.css b/templates/css/styles.css
+deleted file mode 100644
+diff --git a/templates/index.html b/templates/index.html
+deleted file mode 100644
+diff --git a/templates/account.html b/templates/account.html
+deleted file mode 100644
+diff --git a/templates/account_login.html b/templates/account_login.html
+deleted file mode 100644
+diff --git a/css/styles.css b/css/styles.css
+deleted file mode 100644
+diff --git a/globals.py b/globals.py
+deleted file mode 100644
+diff --git a/users.json b/users.json
+deleted file mode 100644
+diff --git a/drinkers.json b/drinkers.json
+deleted file mode 100644
+diff --git a/bac_calculate.py b/bac_calculate.py
+deleted file mode 100644
+diff --git a/static/images/ipa.jpg b/static/images/ipa.jpg
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+GIT binary patch
+literal 0
+Hc$@<O00001
+
+diff --git a/static/images/logo.png b/static/images/logo.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+GIT binary patch
+literal 0
+Hc$@<O00001
+
+diff --git a/static/images/stout.jpg b/static/images/stout.jpg
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+GIT binary patch
+literal 0
+Hc$@<O00001
+
+diff --git a/static/images/gin_tonic.jpg b/static/images/gin_tonic.jpg
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+GIT binary patch
+literal 0
+Hc$@<O00001
+
+diff --git a/static/images/margarita.jpg b/static/images/margarita.jpg
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+GIT binary patch
+literal 0
+Hc$@<O00001
+
+diff --git a/static/images/chardonnay.jpg b/static/images/chardonnay.jpg
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+GIT binary patch
+literal 0
+Hc$@<O00001
+
+diff --git a/static/images/pinot_noir.jpg b/static/images/pinot_noir.jpg
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+GIT binary patch
+literal 0
+Hc$@<O00001
+
+diff --git a/static/images/red_sangria.jpg b/static/images/red_sangria.jpg
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+GIT binary patch
+literal 0
+Hc$@<O00001
+
+diff --git a/static/images/whiskey_sour.jpg b/static/images/whiskey_sour.jpg
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+GIT binary patch
+literal 0
+Hc$@<O00001
+
+diff --git a/static/images/vodka_martini.jpg b/static/images/vodka_martini.jpg
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+GIT binary patch
+literal 0
+Hc$@<O00001
+

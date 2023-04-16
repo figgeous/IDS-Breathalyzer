@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BAC Buddy: Drink recommendations</title>
+</head>
+<body>
+{% if recommendations %}
+    {% for recommendation in recommendations %}
+    <h1>{{ recommendation.name }}</h1>
+    <h2>{{ recommendation.type }}</h2>
+    <h3>{{ recommendation.ingredients }}</h3>
+    <img src="{{ recommendation.image_path }}" alt="Images of a beverage">
+    {% endfor %}
+{% else %}
+    <h1>You can't drink any more alcohol just yet. Grab something non-alcoholic and try again soon!</h1>
+{% endif %}
+
+<p> Disclaimer: Please note that the drink recommendations provided are for informational purposes only and should be
+    used at the discretion and responsibility of the user. While efforts have been made to provide accurate and helpful
+    recommendations, individual preferences and circumstances may vary. It is important to make informed decisions and
+    drink responsibly. Please do not drive under the influence of alcohol.</p>
+
+<br>
+    <a href="{{ url_for('account_login') }}">Log out</a>
+</body>
+</html>

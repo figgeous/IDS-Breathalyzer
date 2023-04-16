@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BAC Buddy: Account</title>
+    <style>
+body {
+    background-image: url('https://visitpalmsprings.com/wp-content/uploads/2022/08/happy-hour-iStock-615833974-scaled.jpg');
+    background-size: cover;
+    font-family: Arial, sans-serif;
+    color: black;
+    font-size: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+h1 {
+    text-align: center;
+    margin-top: 100px;
+    font-size: 48px;
+    color: black;
+}
+
+form {
+    text-align: center;
+    margin-top: 50px;
+}
+
+label {
+    display: block;
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+input[type="text"] {
+    padding: 10px;
+    font-size: 18px;
+    border-radius: 5px;
+    border: none;
+    outline: none;
+    width: 300px;
+}
+
+.button {
+    padding: 10px 20px;
+    font-size: 18px;
+    border-radius: 20px;
+    border: none;
+    outline: none;
+    background-color: #007BFF;
+    color: #FFF;
+    cursor: pointer;
+    margin-top: 10px;
+    display: inline-block;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.button:hover {
+    background-color: #0056b3;
+}
+
+    </style>
+</head>
+<body>
+    <h1>Welcome {{ drinker.username }}!</h1>
+
+    {% if current_session %}
+        <p>Your last drinking session started at {{ current_session.start_time.strftime('%H:%M') }}.
+        <br>
+        You indicated that you wanted to get {{ current_session.get_qualitative_max_alcohol() }}</p>
+        {% if current_session.drive_time %}
+            Your current drive time is {{ current_session.drive_time.strftime('%H:%M') }}
+            <br>
+        {% endif %}
+        <a href="{{ url_for('measure_bac', user_id=drinker.id) }}" class="button">Get drink recommendation</a>
+    {% else %}
+        <p>You have not started a session yet. Start a session to get drink recommendations.</p>
+    {% endif %}
+
+    <br>
+    <a href="{{ url_for('create_new_session', user_id=drinker.id) }}" class="button">Start new session</a>
+    <br>
+    <a href="{{ url_for('account_login') }}" class="button">Log out</a>
+</body>
+</html>
