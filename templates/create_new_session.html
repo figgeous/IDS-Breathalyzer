@@ -3,50 +3,85 @@
   <head>
     <meta charset="utf-8">
     <title>Start a new session</title>
-    </head>
-    <body>
+    <style>
+      body {
+          background-image: url('https://visitpalmsprings.com/wp-content/uploads/2022/08/happy-hour-iStock-615833974-scaled.jpg');
+        background-size: cover;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        flex-direction: column;
+        text-align: center;
+          font-size:30px;
+      }
+
+      h1 {
+        margin-top: 0;
+      }
+
+      label {
+        margin-top: 20px;
+      }
+
+      #toggle-button1, #toggle-button2 {
+        margin-top: 10px;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: #fff;
+        border-radius: 20px;
+        cursor: pointer;
+      }
+
+      #toggle-button1:hover, #toggle-button2:hover {
+        background-color: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
     <h1>BAC Buddy: Start a new session</h1>
 
     <label for="toggle-button">Are you driving?</label>
-    <button id="toggle-button" onclick="toggleContents(driving=true)">Yes</button>
-    <button id="toggle-button" onclick="toggleContents(driving=false)">No</button>
+    <button id="toggle-button1" onclick="toggleContents(driving=true)">Yes</button>
+    <button id="toggle-button2" onclick="toggleContents(driving=false)">No</button>
 
-<div id="content1" style="display: none;">
-        <form action="/create_new_session" method="POST">
-            <input type="hidden" id="user_id" name="user_id" value="{{ user_id }}" />
-            <label for="max_alcohol">Choose your drinking goal. want to get...</label>
-            <select id="max_alcohol" name="max_alcohol">
-                <option value="Tipsy">Tipsy</option>
-                <option value="Inbetween">Inbetween</option>
-                <option value="Drunk">Drunk</option>
-                <option value="Really Drunk">Really Drunk</option>
-            </select>
-            <br>
-      <input type="submit" value="Start session">
-    </form>
-</div>
+    <div id="content1" style="display: none;">
+      <form action="/create_new_session" method="POST">
+        <input type="hidden" id="user_id" name="user_id" value="{{ user_id }}" />
+        <label for="max_alcohol">Choose your drinking goal. want to get...</label>
+        <select id="max_alcohol" name="max_alcohol">
+          <option value="Tipsy">Tipsy</option>
+          <option value="Inbetween">Inbetween</option>
+          <option value="Drunk">Drunk</option>
+          <option value="Really Drunk">Really Drunk</option>
+        </select>
+        <br>
+        <input type="submit" value="Start session">
+      </form>
+    </div>
 
-<div id="content2" style="display: none;">
-        <form action="/create_new_session" method="POST">
-            <input type="hidden" id="user_id" name="user_id" value="{{ user_id }}" />
-            <label for="max_alcohol">Choose your drinking goal. want to get...</label>
-            <select id="max_alcohol" name="max_alcohol">
-                <option value="Tipsy">Tipsy</option>
-                <option value="Inbetween">Inbetween</option>
-                <option value="Drunk">Drunk</option>
-                <option value="Really Drunk">Really Drunk</option>
-            </select>
-            <br>
-            <label for="drive_time">Drive time:</label>
-            <input type="time" id="drive_time" name="drive_time">
-            <br>
-      <input type="submit" value="Start session">
-    </form>
-</div>
-<br>
+    <div id="content2" style="display: none;">
+      <form action="/create_new_session" method="POST">
+        <input type="hidden" id="user_id" name="user_id" value="{{ user_id }}" />
+        <label for="max_alcohol">Choose your drinking goal. want to get...</label>
+        <select id="max_alcohol" name="max_alcohol">
+          <option value="Tipsy">Tipsy</option>
+          <option value="Inbetween">Inbetween</option>
+          <option value="Drunk">Drunk</option>
+          <option value="Really Drunk">Really Drunk</option>
+        </select>
+        <br>
+        <label for="drive_time">Drive time:</label>
+        <input type="time" id="drive_time" name="drive_time">
+        <br>
+        <input type="submit" value="Start session">
+      </form>
+    </div>
+    <br>
     <a href="{{ url_for('account_login') }}">Log out</a>
-    </body>
+  </body>
 </html>
+
 
 <script>
    function toggleContents(driving) {

@@ -3,15 +3,56 @@
 <head>
 <meta charset="utf-8">
 <title>BAC Buddy: Measure BAC</title>
+<style>
+body {
+    background-image: url('https://visitpalmsprings.com/wp-content/uploads/2022/08/happy-hour-iStock-615833974-scaled.jpg');
+    background-size: cover;
+    text-align: center;
+}
+
+form {
+  display: inline-block;
+  margin-top: 100px;
+}
+
+label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 30px;
+}
+
+input[type="text"] {
+  padding: 10px;
+  font-size: 18px;
+    border-radius: 20px;
+}
+
+input[type="submit"] {
+  background-color: #007bff;
+  color: #fff;
+  border-radius: 20px;
+  padding: 10px 20px;
+  margin-top: 10px;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+a {
+  display: block;
+  margin-top: 20px;
+  font-size: 30px;
+}
+</style>
 </head>
 <body>
 <form id="bac_form" action="/measure_bac_manually" method="post">
 <input type="hidden" id="user_id" name="user_id" value="{{ user_id }}" />
 <label for="current_bac">Blood Alcohol Content %:</label>
 <input type="text" name="current_bac" id="current_bac" required>
+<br>
 <input type="submit" value="Submit">
 </form>
 <br>
-    <a href="{{ url_for('account_login') }}">Log out</a>
+<a href="{{ url_for('account_login') }}">Log out</a>
 </body>
 </html>
