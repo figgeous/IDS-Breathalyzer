@@ -17,10 +17,9 @@ from flask import url_for
 from pyscripts.objects import Drinker
 from pyscripts.objects import get_drink_candidates_for_drive_time
 from pyscripts.objects import get_drink_candidates_less_than_max_alcohol
+from pyscripts.objects import get_max_potentiometer_value
 from pyscripts.objects import Session
-from pyscripts.pyserial import get_potentiometer_values
 
-# from pyscripts.bac_calculate import get_drink_recommendations
 
 logging.basicConfig(
     filename="app.log",
@@ -33,11 +32,10 @@ logging.basicConfig(
 # Choose the measurement method for the BAC sensor
 bac_measurement_method = "manual"  # "potentiometer" or "manual" or "alcohol_sensor"
 
-app = Flask(__name__)
+# Port name for Arduino serial connection. This is likely to be different on your computer.
+serial_port_name = "COM7"
 
-# Load user data from JSON file
-with open("databases/users.json", "r") as f:
-    users = json.load(f)
+app = Flask(__name__)
 
 
 @app.route("/")
@@ -48,11 +46,12 @@ def welcome_page():
 @app.route("/qr_code")
 def qr_code():
     """
-    Returns a QR code image that contains the server URL.
+    Returns a QR code image that contains the server URL. By default Flash only listens to requests from the local
+    machine, so for the QR code to generate a url that can connect, Flask needs to be run with "--host=0.0.0.0" flag to
+    allow it to on all available network interfaces and accept requests from any IP address.
     """
-    server_url = "http://" + socket.gethostbyname(socket.gethostname()) + ":5000"
-    logging.info("QR code page accessed")
-    server_url = "http://192.168.1.125:5000"  # Replace with your server URL
+    # Insert the IP address of the server into the QR code
+    server_url = "http://192.168.1.121:5000"
     qr = qrcode.QRCode(version=1, box_size=10, border=5)
     qr.add_data(server_url)
     qr.make(fit=True)
@@ -75,6 +74,9 @@ def qr_code():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    """
+    Creates a new account for a user.
+    """
     if request.method == "POST":
         # Retrieve form data
         username = request.form.get("username").strip()
@@ -88,6 +90,7 @@ def register():
         if Drinker.get_drinker_from_db(username=username):
             return f"Username {username} already exists!"
 
+        # Create new drinker object
         new_drinker = Drinker(
             username=username,
             password=password,
@@ -105,6 +108,9 @@ def register():
 
 @app.route("/login", methods=["GET", "POST"])
 def account_login():
+    """
+    Logs in a user and redirects them to their account page.
+    """
     logging.info("Login page accessed with method: {}".format(request.method))
 
     # Check if the request method is POST
@@ -130,10 +136,15 @@ def account_login():
 
 @app.route("/account/<int:user_id>", methods=["GET"])
 def account_home(user_id):
+    """
+    Displays the account home page for the given user.
+    """
     logging.info(f"Account page accessed for {user_id}")
 
+    # Get the current drinker (user) from the database
     drinker = Drinker.get_drinker_from_db(user_id=user_id)
 
+    # Get the current session for the user. If there is no current session, then current_session will be None
     current_session = drinker.get_current_session()
     logging.info(f"Drinker: {drinker.username}, current session: {current_session}")
 
@@ -149,7 +160,6 @@ def create_new_session():
     """
     Starts a new session for the given user
     """
-    # get arg from url
     user_id = request.args.get("user_id", None)
 
     logging.info(
@@ -158,18 +168,23 @@ def create_new_session():
         )
     )
     if request.method == "POST":
+        # Get form data
         user_id = request.form.get("user_id")
-        assert user_id, "User id not found in POST request"
-
         drive_time = request.form.get("drive_time", None)
+
+        # Convert drive time to datetime object
         if drive_time:
             drive_time = datetime.strptime(request.form.get("drive_time"), "%H:%M")
             drive_time = datetime.combine(datetime.today(), drive_time.time())
-            # Account for when drive time is in early hours of the morning
+            # Account for when drive time is in early hours of the morning. If the drive time is before the current time,
+            # then the drive time is for the next day...
             if drive_time < datetime.now():
                 drive_time += timedelta(days=1)
 
+        # Get the max alcohol level for the session
         max_alcohol = Session.qualitative_to_bac[request.form.get("max_alcohol")]
+
+        # Create new session
         new_session = Session(
             user_id=user_id,
             max_alcohol=max_alcohol,
@@ -178,6 +193,7 @@ def create_new_session():
         )
         new_session.save_to_db()
         logging.info("New session created for user: {}".format(user_id))
+
         return redirect(url_for("account_home", user_id=user_id))
 
     # GET request
@@ -187,9 +203,13 @@ def create_new_session():
 
 @app.route("/measure_bac", methods=["GET"])
 def measure_bac():
+    """
+    Redirects to the appropriate page for measuring the user's BAC.
+    """
     user_id = request.args.get("user_id", None)
     logging.info("Measure_bac page accessed, user: {}".format(user_id))
 
+    # Route to correct view based on the bac_measurement_method (e.g. "manual", "potentiometer")
     if bac_measurement_method == "potentiometer":
         return redirect(url_for("get_bac_from_potentiometre", user_id=user_id))
     elif bac_measurement_method == "manual":
@@ -198,6 +218,9 @@ def measure_bac():
 
 @app.route("/measure_bac_manually", methods=["GET", "POST"])
 def measure_bac_manually():
+    """
+    Allows the user to manually enter their BAC. Used only during development.
+    """
     user_id = request.args.get("user_id", None)
     logging.info(
         "Measure_bac_manually page accessed, method: {}, user: {}".format(
@@ -205,52 +228,70 @@ def measure_bac_manually():
         )
     )
     if request.method == "POST":
+        # Get form data
         current_bac = request.form.get("current_bac")
         user_id = request.form.get("user_id")
+
         logging.info("Current bac: {}".format(current_bac))
+
         return redirect(
             url_for(
                 "recommendation", user_id=str(user_id), current_bac=str(current_bac)
             )
         )
-
     # GET request
     return render_template("input_bac_manually.html", user_id=user_id)
 
 
 @app.route("/get_bac_from_potentiometer", methods=["GET", "POST"])
 def get_bac_from_potentiometre():
+    """
+    Gets the user's BAC from the potentiometer.
+    """
     user_id = request.args.get("user_id", None)
+
     logging.info(
         "Get bac from potentiometer page accessed, method: {}, user: {}".format(
             request.method, user_id
         )
     )
+
     if request.method == "POST":
-        current_bac = get_potentiometer_values()
+        # Get max potentiometer value
+        current_bac = get_max_potentiometer_value(serial_port_name=serial_port_name)
+        # Round to 3 decimal places and return
         return str(round(current_bac, 3))
+
     # GET request
     return render_template("input_bac_with_potetiometer.html", user_id=user_id)
 
 
 @app.route("/<int:user_id>/recommendation/<current_bac>", methods=["GET"])
 def recommendation(user_id, current_bac=None):
+    """
+    Displays drink recommendations for the user.
+    """
     logging.info(
         "Recommendation page accessed, user: {}, method: {}, current_bac: {}".format(
             user_id, request.method, current_bac
         )
     )
+
+    # Convert current_bac to float
     current_bac = float(current_bac) if current_bac else None
+
+    # Get drinker and current session
     drinker = Drinker.get_drinker_from_db(user_id=user_id)
     current_session = drinker.get_current_session()
 
+    # Get drink recommendations
     if current_session.drive_time:
-        # Get drink recommendations based on drive time. The drinker's max alcohol is taken into account.
+        # Based on drive time. The drinker's max alcohol is taken into account.
         recommendations = get_drink_candidates_for_drive_time(
             drinker=drinker, current_bac=current_bac
         )
     else:
-        # Get drink recommendations based on a user's max alcohol preference (not drive time)
+        # Based on a user's max alcohol preference (not drive time)
         recommendations = get_drink_candidates_less_than_max_alcohol(
             drinker=drinker, current_bac=current_bac
         )
