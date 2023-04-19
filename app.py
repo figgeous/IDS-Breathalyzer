@@ -1,7 +1,5 @@
-import json
 import logging
 import random
-import socket
 from datetime import datetime
 from datetime import timedelta
 from io import BytesIO
@@ -17,20 +15,12 @@ from flask import url_for
 from pyscripts.objects import Drinker
 from pyscripts.objects import get_drink_candidates_for_drive_time
 from pyscripts.objects import get_drink_candidates_less_than_max_alcohol
-from pyscripts.objects import get_max_potentiometer_value
 from pyscripts.objects import Session
 
-
-logging.basicConfig(
-    filename="app.log",
-    filemode="w",
-    format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s",
-    datefmt="%H:%M:%S",
-    level=logging.DEBUG,
-)
+# To run the app, run the following command in the terminal: flask run
 
 # Choose the measurement method for the BAC sensor
-bac_measurement_method = "manual"  # "potentiometer" or "manual" or "alcohol_sensor"
+bac_measurement_method = "manual"  # "potentiometer" or "manual"
 
 # Port name for Arduino serial connection. This is likely to be different on your computer.
 serial_port_name = "COM7"
@@ -46,11 +36,11 @@ def welcome_page():
 @app.route("/qr_code")
 def qr_code():
     """
-    Returns a QR code image that contains the server URL. By default Flash only listens to requests from the local
+    Returns a QR code image that contains the server URL. By default Flask only listens to requests from the local
     machine, so for the QR code to generate a url that can connect, Flask needs to be run with "--host=0.0.0.0" flag to
     allow it to on all available network interfaces and accept requests from any IP address.
     """
-    # Insert the IP address of the server into the QR code
+    # Insert the IP address of the server into the QR code. This may need to be the IP of your router (as it is below)
     server_url = "http://192.168.1.121:5000"
     qr = qrcode.QRCode(version=1, box_size=10, border=5)
     qr.add_data(server_url)
@@ -258,7 +248,8 @@ def get_bac_from_potentiometre():
 
     if request.method == "POST":
         # Get max potentiometer value
-        current_bac = get_max_potentiometer_value(serial_port_name=serial_port_name)
+        # current_bac = get_max_potentiometer_value(serial_port_name=serial_port_name)
+        current_bac = 0.0
         # Round to 3 decimal places and return
         return str(round(current_bac, 3))
 
