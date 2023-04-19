@@ -15,6 +15,7 @@ from flask import url_for
 from pyscripts.objects import Drinker
 from pyscripts.objects import get_drink_candidates_for_drive_time
 from pyscripts.objects import get_drink_candidates_less_than_max_alcohol
+from pyscripts.objects import get_max_potentiometer_value
 from pyscripts.objects import Session
 
 # To run the app, run the following command in the terminal: flask run
@@ -248,8 +249,8 @@ def get_bac_from_potentiometre():
 
     if request.method == "POST":
         # Get max potentiometer value
-        # current_bac = get_max_potentiometer_value(serial_port_name=serial_port_name)
-        current_bac = 0.0
+        current_bac = get_max_potentiometer_value(serial_port_name=serial_port_name)
+
         # Round to 3 decimal places and return
         return str(round(current_bac, 3))
 

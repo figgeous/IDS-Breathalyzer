@@ -8,8 +8,6 @@ from datetime import timedelta
 
 import serial
 
-# Connection to Arduino and data collection
-
 
 def get_max_potentiometer_value(serial_port_name: str) -> float:
     """
@@ -48,7 +46,7 @@ def get_all_drinkers() -> dict[str, dict]:
         with open("databases/users.json", "r") as infile:
             drinkers = json.load(infile)
     except Exception:
-        print("Unable to load database file")
+        logging.exception("Unable to load database file")
     return drinkers
 
 
@@ -60,7 +58,7 @@ def get_all_drinks_from_db() -> list["Drink"]:
         with open("databases/beverages.json", "r") as infile:
             beverages_from_db = json.load(infile)
     except Exception as e:
-        print("Unable to load database file", e)
+        logging.exception("Unable to load database file", e)
 
     beverages_list = []
     for _, beverage in beverages_from_db.items():
@@ -327,9 +325,9 @@ class Drinker:
         try:
             with open("databases/users.json", "w") as outfile:
                 json.dump(drinkers, outfile)
-                print("Saved to database")
+                logging.info("Saved to database")
         except Exception:
-            print("Unable to load database file")
+            logging.exception("Unable to load database file")
         return drinkers
 
     def __str__(self):
@@ -420,9 +418,9 @@ class Session:
         try:
             with open("databases/sessions.json", "w") as outfile:
                 json.dump(sessions, outfile)
-                print("Saved to database")
+                logging.info("Saved to database")
         except Exception:
-            print("Unable to load database file")
+            logging.exception("Unable to load database file")
         return sessions
 
     def __str__(self):
